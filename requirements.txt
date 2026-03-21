@@ -1,4 +1,4 @@
 azure-functions
 azure-keyvault-secrets
 azure-identity
-httpx
+httpx[asyncio]
