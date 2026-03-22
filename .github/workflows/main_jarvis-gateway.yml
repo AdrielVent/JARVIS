@@ -62,16 +62,18 @@ jobs:
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DD3C8E746AFC413094FE9016A7974A70 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9F16B5B2D9F04D3B949E4A8F88F44B2E }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5FB33F4FF6174C2487F727B45FEAA1C9 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E2A06690812C4F47B3C9B13C }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_BB7689D9116E4224B6 }}
 
       - name: Set GEMINI_API_KEY app setting
-        run: |
-          az functionapp config appsettings set \
-            --resource-group JARVIS-RG \
-            --name jarvis-gateway \
-            --settings GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-            --output none
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az functionapp config appsettings set \
+              --resource-group JARVIS-RG \
+              --name jarvis-gateway \
+              --settings "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
+              --output none
 
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
