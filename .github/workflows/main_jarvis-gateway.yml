@@ -30,7 +30,7 @@ jobs:
           source venv/bin/activate
 
       - name: Install dependencies
-        run: pip install -r requirements.txt --target='.python_packages/lib/site-packages'
+        run: pip install -r requirements.txt
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
@@ -56,14 +56,16 @@ jobs:
           name: python-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: |
+          unzip release.zip
+          rm release.zip
 
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DD3C8E746AFC413094FE9016A7974A70 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E2A06690812C4F47B3C9B13C }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_BB7689D9116E4224B6 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DD3C8E746AFC413094FE901619383434 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E2A06690812C4F47B3C9B13C1A950287 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_BB7689D9116E4224B62C4AEA71CAEB0F }}
 
       - name: Set GEMINI_API_KEY app setting
         uses: azure/CLI@v2
@@ -81,4 +83,4 @@ jobs:
         with:
           app-name: 'jarvis-gateway'
           slot-name: 'Production'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
