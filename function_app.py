@@ -1,48 +1,44 @@
 import azure.functions as func
-import logging,json,re
+import json, os, logging
 import httpx
-from azure.keyvault.secrets import SecretClient
-from azure.identity import DefaultAzureCredential
 
-app=func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
-KV="https://jarvis-kv-2026.vault.azure.net/"
-_c=DefaultAzureCredential(); _kv=None
-def kv():
-    global _kv
-    if _kv is None: _kv=SecretClient(vault_url=KV,credential=_c)
-    return _kv
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-PH=re.compile(r"\b\d{3}[-.]?\s?\d{3}[-.]?\s?\d{4}\b")
-EM=re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
-def scrub(t):
-    t=PH.sub("[REDACTED_PHONE]",t)
-    t=EM.sub("[REDACTED_EMAIL]",t)
-    return t
-
-@app.route(route="jarvis",methods=["POST"])
-async def jarvis(req:func.HttpRequest)->func.HttpResponse:
+@app.route(route="jarvis", methods=["GET", "POST", "OPTIONS"])
+def jarvis(req: func.HttpRequest) -> func.HttpResponse:
+    cors = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST,GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
+    if req.method == "OPTIONS":
+        return func.HttpResponse("", status_code=200, headers=cors)
     try:
-        b=req.get_json()
-        target=b.get("target","gemini")
-        prompt=scrub(b.get("prompt",""))
-        sys_msg=b.get("system","You are JARVIS, an elite AI assistant.")
-        if target=="hofstra":
-            key=kv().get_secret("HofstraKey").value
-            ep="https://jarvis-openai-av2026.openai.azure.com/"
-            dep=b.get("deployment","gpt-4o")
-            url=f"{ep}openai/deployments/{dep}/chat/completions?api-version=2024-12-01-preview"
-            hdrs={"api-key":key,"Content-Type":"application/json"}
-            pl={"messages":[{"role":"system","content":sys_msg},{"role":"user","content":prompt}],"max_tokens":b.get("max_tokens",800),"temperature":b.get("temperature",0.7)}
-            async with httpx.AsyncClient(timeout=28.0) as c:
-                r=await c.post(url,headers=hdrs,json=pl)
-        else:
-            key=kv().get_secret("GeminiKey").value
-            model=b.get("model","gemini-2.0-flash")
-            url=f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-            pl={"system_instruction":{"parts":[{"text":sys_msg}]},"contents":[{"parts":[{"text":prompt}]}],"generationConfig":{"maxOutputTokens":b.get("max_tokens",800)}}
-            async with httpx.AsyncClient(timeout=28.0) as c:
-                r=await c.post(url,json=pl)
-        return func.HttpResponse(r.text,status_code=r.status_code,mimetype="application/json")
+        body = req.get_json()
+        message = body.get("message", "")
+        gemini_key = os.environ.get("GEMINI_API_KEY", "")
+        if not gemini_key:
+            return func.HttpResponse(
+                json.dumps({"error": "GEMINI_API_KEY not set"}),
+                status_code=500, mimetype="application/json", headers=cors
+            )
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}"
+        payload = {"contents": [{"role": "user", "parts": [{"text": message}]}]}
+        r = httpx.post(url, json=payload, timeout=30)
+        data = r.json()
+        if "candidates" not in data:
+            return func.HttpResponse(
+                json.dumps({"error": str(data)}),
+                status_code=500, mimetype="application/json", headers=cors
+            )
+        text = data["candidates"][0]["content"]["parts"][0]["text"]
+        return func.HttpResponse(
+            json.dumps({"reply": text}),
+            status_code=200, mimetype="application/json", headers=cors
+        )
     except Exception as e:
-        logging.error(str(e))
-        return func.HttpResponse(json.dumps({"error":str(e)}),status_code=500,mimetype="application/json")
+        logging.error(f"JARVIS error: {e}")
+        return func.HttpResponse(
+            json.dumps({"error": str(e)}),
+            status_code=500, mimetype="application/json", headers=cors
+        )
