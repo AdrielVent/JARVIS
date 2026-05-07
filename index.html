@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071116">
+    <meta
+      name="description"
+      content="A browser-based Project J.A.R.V.I.S. command center prototype with live telemetry, memory, tool, and safety panels."
+    >
+    <title>Project J.A.R.V.I.S. Command Center</title>
+    <link rel="stylesheet" href="src/styles.css">
+  </head>
+  <body>
+    <div class="app-shell" data-testid="app-shell">
+      <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
+
+      <header class="topbar" aria-label="Command header">
+        <div class="identity">
+          <span class="sigil" aria-hidden="true"></span>
+          <div>
+            <p class="eyebrow">Project J.A.R.V.I.S.</p>
+            <h1>Command Center</h1>
+          </div>
+        </div>
+        <nav class="mode-tabs" aria-label="Operating mode">
+          <button class="tab is-active" type="button" data-mode="standby">Standby</button>
+          <button class="tab" type="button" data-mode="analysis">Analysis</button>
+          <button class="tab" type="button" data-mode="ops">Ops</button>
+        </nav>
+        <div class="top-actions" aria-label="Session controls">
+          <button class="icon-button" type="button" data-action="simulate" aria-label="Run simulated turn" title="Run simulated turn">
+            <span aria-hidden="true">▶</span>
+          </button>
+          <button class="icon-button" type="button" data-action="toggle-safety" aria-label="Toggle safety gate" title="Toggle safety gate">
+            <span aria-hidden="true">⛨</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="panel senses" aria-labelledby="senses-title">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Sensory Layer</p>
+              <h2 id="senses-title">Live Inputs</h2>
+            </div>
+            <span class="status-pill is-good">Hot</span>
+          </div>
+
+          <div class="sensor-stack">
+            <article class="sensor">
+              <div class="sensor-icon" aria-hidden="true">◉</div>
+              <div>
+                <h3>Wake Word</h3>
+                <p>Armed, barge-in ready</p>
+              </div>
+              <meter min="0" max="100" value="91">91%</meter>
+            </article>
+            <article class="sensor">
+              <div class="sensor-icon" aria-hidden="true">≈</div>
+              <div>
+                <h3>Microphone</h3>
+                <p>16 kHz mono stream</p>
+              </div>
+              <meter min="0" max="100" value="76">76%</meter>
+            </article>
+            <article class="sensor">
+              <div class="sensor-icon" aria-hidden="true">◇</div>
+              <div>
+                <h3>Vision Cache</h3>
+                <p>Low-rate latest frame</p>
+              </div>
+              <meter min="0" max="100" value="63">63%</meter>
+            </article>
+          </div>
+
+          <div class="memory-box">
+            <div class="panel-head compact">
+              <h3>Memory Recall</h3>
+              <span>Chroma mock</span>
+            </div>
+            <ul class="memory-list" id="memory-list"></ul>
+          </div>
+        </section>
+
+        <section class="command-stage" aria-labelledby="core-title">
+          <div class="core-wrap">
+            <div class="orbit orbit-a"></div>
+            <div class="orbit orbit-b"></div>
+            <div class="orbit orbit-c"></div>
+            <div class="voice-core" aria-hidden="true">
+              <div class="reactor-ring"></div>
+              <div class="core-light"></div>
+              <div class="waveform" id="waveform"></div>
+            </div>
+          </div>
+
+          <div class="dialogue">
+            <p class="eyebrow">Conversational Runtime</p>
+            <h2 id="core-title">Good evening. Systems are within expected parameters.</h2>
+            <p id="assistant-line">
+              I am maintaining a warm listening path, preserving safety gates, and holding noncritical work outside the audio-critical loop.
+            </p>
+            <form class="command-form" id="command-form">
+              <label for="command-input">Command</label>
+              <div class="input-row">
+                <input id="command-input" name="command" type="text" autocomplete="off" value="Run diagnostics on the workshop systems.">
+                <button type="submit">Transmit</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="panel tools" aria-labelledby="tools-title">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Tool Bus</p>
+              <h2 id="tools-title">Bounded Actions</h2>
+            </div>
+            <span class="status-pill is-safe" id="safety-pill">Safe</span>
+          </div>
+
+          <div class="tool-grid">
+            <button class="tool-card" type="button" data-tool="home">
+              <span class="tool-glyph" aria-hidden="true">⌂</span>
+              <strong>Home Assistant</strong>
+              <span>REST/WS adapter</span>
+            </button>
+            <button class="tool-card" type="button" data-tool="printer">
+              <span class="tool-glyph" aria-hidden="true">▤</span>
+              <strong>Printer Telemetry</strong>
+              <span>M155 worker</span>
+            </button>
+            <button class="tool-card" type="button" data-tool="exec">
+              <span class="tool-glyph" aria-hidden="true">⌁</span>
+              <strong>OS Tasks</strong>
+              <span>Allowlisted exec</span>
+            </button>
+            <button class="tool-card" type="button" data-tool="memory">
+              <span class="tool-glyph" aria-hidden="true">◎</span>
+              <strong>Memory Index</strong>
+              <span>Async writes</span>
+            </button>
+          </div>
+
+          <div class="event-log">
+            <div class="panel-head compact">
+              <h3>Safety Event Log</h3>
+              <span id="event-count">04</span>
+            </div>
+            <ol id="event-log"></ol>
+          </div>
+        </section>
+      </main>
+
+      <footer class="health-strip" aria-label="Runtime health">
+        <div>
+          <span>Wake to STT</span>
+          <strong id="metric-stt">184 ms</strong>
+        </div>
+        <div>
+          <span>First token</span>
+          <strong id="metric-token">96 ms</strong>
+        </div>
+        <div>
+          <span>TTS first byte</span>
+          <strong id="metric-tts">142 ms</strong>
+        </div>
+        <div>
+          <span>Memory</span>
+          <strong>Ready</strong>
+        </div>
+        <div>
+          <span>Provider budget</span>
+          <strong>Nominal</strong>
+        </div>
+      </footer>
+    </div>
+
+    <script src="src/app.js"></script>
+  </body>
+</html>
