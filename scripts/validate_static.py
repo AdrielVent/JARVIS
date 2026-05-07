@@ -12,6 +12,8 @@ REQUIRED_FILES = [
     ROOT / "src" / "styles.css",
     ROOT / "src" / "app.js",
     ROOT / "bridge" / "jarvis_local_bridge.py",
+    ROOT / "assets" / "jarvis-local-qr.png",
+    ROOT / "assets" / "jarvis-local-qr.svg",
     ROOT / "README.md",
     ROOT / "JARVIS_CANON_AND_DESIGN_BRIEF.md",
     ROOT / "JARVIS_PROJECT_VALIDATION.md",
@@ -88,6 +90,7 @@ def validate_js() -> None:
     required_tokens = [
         "connectBridge",
         "resolveBridgeApiBase",
+        "jarvis-local-qr.png",
         "simulateTurn",
         "toggleSafety",
         "renderWaveform",

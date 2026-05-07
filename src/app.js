@@ -73,6 +73,7 @@ const bridgeCpu = document.querySelector("#bridge-cpu");
 const bridgeDisk = document.querySelector("#bridge-disk");
 const bridgeBattery = document.querySelector("#bridge-battery");
 const bridgeHealth = document.querySelector("#bridge-health");
+const qrImagePath = "assets/jarvis-local-qr.png";
 const memoryList = document.querySelector("#memory-list");
 const eventLog = document.querySelector("#event-log");
 const eventCount = document.querySelector("#event-count");
