@@ -36,6 +36,27 @@ export default function BridgeConnect({
   onDemoMode,
 }: BridgeConnectProps) {
   const isConnecting = connectionStatus === "connecting";
+  const connectionSteps = [
+    "Start the Local Bridge",
+    "Enter or find the bridge URL",
+    "Connect to view your dashboard",
+  ];
+  const worksNow = [
+    "Real device name",
+    "Operating system",
+    "CPU",
+    "Memory",
+    "Battery",
+    "Local time",
+    "Bridge online status",
+  ];
+  const doesNotDo = [
+    "Does not read files",
+    "Does not run hidden commands",
+    "Does not scan your network",
+    "Does not upload device data",
+    "Does not control your laptop without explicit future bridge endpoints",
+  ];
 
   return (
     <main className="jarvis-screen min-h-screen px-4 py-5 sm:px-6 lg:px-8">
@@ -65,6 +86,57 @@ export default function BridgeConnect({
             </p>
           </div>
         </motion.header>
+
+        <HudPanel title="How J.A.R.V.I.S connects" eyebrow="First-Time Setup" delay={0.02}>
+          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr_0.9fr]">
+            <div className="space-y-5">
+              <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
+                J.A.R.V.I.S runs in your browser. To show real laptop details, it connects to a
+                small Local Bridge running on your own computer. Your data stays local and is not
+                uploaded.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {connectionSteps.map((step, index) => (
+                  <div
+                    key={step}
+                    className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4"
+                  >
+                    <span className="step-number">{index + 1}</span>
+                    <p className="mt-3 text-sm font-semibold text-slate-100">{step}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-6 text-amber-50">
+                Demo Mode works without the bridge. Real device mode requires a Local Bridge URL,
+                usually <code>http://127.0.0.1:8787</code>.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-emerald-300/20 bg-emerald-300/5 p-4">
+              <h3 className="font-semibold text-emerald-100">What works now</h3>
+              <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+                {worksNow.map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-lg bg-emerald-300" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-lg border border-rose-300/20 bg-rose-300/5 p-4">
+              <h3 className="font-semibold text-rose-100">What J.A.R.V.I.S does not do</h3>
+              <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+                {doesNotDo.map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-lg bg-rose-200" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </HudPanel>
 
         <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
           <HudPanel title="Manual Connection" eyebrow="Section 1" delay={0.05}>

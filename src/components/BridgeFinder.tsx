@@ -50,6 +50,11 @@ const setupCopy = {
   },
 };
 
+const quickStartCommands = {
+  unix: ["cd project-folder", "python3 bridge/jarvis_local_bridge.py"],
+  windows: ["cd project-folder", "python bridge/jarvis_local_bridge.py"],
+};
+
 export default function BridgeFinder({
   foundBridges,
   isFindingBridge,
@@ -168,6 +173,10 @@ export default function BridgeFinder({
 
           <div className="rounded-lg border border-cyan-300/20 bg-white/[0.03] p-4">
             <h4 className="font-semibold text-slate-50">Don&apos;t have the Local Bridge yet?</h4>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Bridge downloads are coming soon. Developers can run the bridge from the project
+              folder with <code>python3 bridge/jarvis_local_bridge.py</code>.
+            </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <button className="disabled-button" type="button" disabled>
                 Download for macOS
@@ -179,6 +188,30 @@ export default function BridgeFinder({
               </button>
             </div>
           </div>
+
+          <details className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4 text-sm text-slate-300">
+            <summary className="cursor-pointer font-semibold text-cyan-100">
+              Developer quick start
+            </summary>
+            <div className="mt-4 grid gap-4">
+              <div>
+                <h4 className="font-semibold text-slate-50">macOS/Linux</h4>
+                <pre className="mt-2 overflow-x-auto rounded-lg border border-cyan-300/20 bg-slate-950/70 p-3 text-xs leading-6 text-cyan-50">
+                  <code>{quickStartCommands.unix.join("\n")}</code>
+                </pre>
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-50">Windows</h4>
+                <pre className="mt-2 overflow-x-auto rounded-lg border border-cyan-300/20 bg-slate-950/70 p-3 text-xs leading-6 text-cyan-50">
+                  <code>{quickStartCommands.windows.join("\n")}</code>
+                </pre>
+              </div>
+              <p className="leading-6">
+                Then open the website and connect with:{" "}
+                <code>http://127.0.0.1:8787</code>
+              </p>
+            </div>
+          </details>
         </div>
       </HudPanel>
     </div>
