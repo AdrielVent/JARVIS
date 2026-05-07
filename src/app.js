@@ -1,21 +1,54 @@
-const memories = [
-  "Architecture stance: event-driven edge runtime with typed internal contracts.",
-  "Canon note: pre-Vision J.A.R.V.I.S. is a voice, operating system, and interface presence.",
-  "Safety gate: physical actions require allowlisted adapters and audit logging.",
+const seedMemories = [
+  "Architecture: typed events keep sensors, tools, and memory separated.",
+  "Safety: physical actions stay in review mode until real adapters are approved.",
+  "Status: this browser build uses mock tools only.",
 ];
 
-const events = [
-  { time: "21:24", text: "Safety policy loaded. Parallel physical tool calls disabled." },
-  { time: "21:25", text: "Home Assistant adapter mocked behind REST/WS boundary." },
-  { time: "21:26", text: "Printer telemetry set to M155-style continuous reporting." },
-  { time: "21:27", text: "Memory writes queued outside the audio-critical path." },
-];
+const modes = {
+  standby: {
+    title: "Standby - listening only",
+    detail: "Messages are recorded and answered. Tool buttons stay idle unless you press one.",
+    state: "waiting",
+    answer: "I am standing by. No tool is active and no device has been changed.",
+  },
+  analysis: {
+    title: "Analyze - diagnostics snapshot",
+    detail: "Sensor readiness, latency, memory, and tool health are refreshed when this mode is selected.",
+    state: "diagnostics refreshed",
+    answer: "I refreshed the diagnostics snapshot. The values below changed, but no external system was contacted.",
+  },
+  ops: {
+    title: "Operate - review before action",
+    detail: "Tool cards can stage mocked actions. Real home, printer, or OS control would require an approved adapter.",
+    state: "reviewing actions",
+    answer: "Operate mode is armed for review. Tool requests are staged and logged; nothing runs automatically.",
+  },
+};
 
-const replies = [
-  "Diagnostics are clean. Wake-word detection is armed, memory recall is responsive, and noncritical workers remain isolated from the speech path.",
-  "I have staged the command for review. No physical action will be executed without the safety gate and an allowlisted adapter.",
-  "The workshop profile is stable. Printer telemetry is simulated, Home Assistant is mocked, and the command router is in bounded mode.",
-  "Analysis complete. Latency remains inside the target envelope, though real providers will need p95 measurements before we declare victory.",
+const toolResults = {
+  home: {
+    summary: "Home Assistant mock check complete. No lights, locks, or devices were changed.",
+    answer: "Home status is mocked as reachable. I did not send a real Home Assistant command.",
+  },
+  printer: {
+    summary: "Printer telemetry mock: hotend 24 C / 0 C target, bed 22 C / 0 C target.",
+    answer: "Printer telemetry is simulated. No serial command was sent to a real printer.",
+  },
+  exec: {
+    summary: "OS task blocked. No allowlisted script was selected.",
+    answer: "I blocked the OS task path. This build will not run arbitrary local commands.",
+  },
+  memory: {
+    summary: "Memory index checked. Visible memory entries were refreshed only in this browser.",
+    answer: "Memory recall is local to the page right now. Nothing was written to a real database.",
+  },
+};
+
+let memories = [...seedMemories];
+let events = [
+  { time: "21:24", text: "Browser session started in standby mode." },
+  { time: "21:25", text: "Mock tools loaded: home, printer, OS task, memory." },
+  { time: "21:26", text: "Safety policy loaded. Real device control is disabled." },
 ];
 
 const metrics = {
@@ -24,6 +57,8 @@ const metrics = {
   tts: document.querySelector("#metric-tts"),
 };
 
+const modeTitle = document.querySelector("#mode-title");
+const modeDetail = document.querySelector("#mode-detail");
 const memoryList = document.querySelector("#memory-list");
 const eventLog = document.querySelector("#event-log");
 const eventCount = document.querySelector("#event-count");
@@ -38,17 +73,20 @@ const safetyPill = document.querySelector("#safety-pill");
 const starfield = document.querySelector("#starfield");
 const ctx = starfield.getContext("2d");
 
+let currentMode = "standby";
 let safetyEnabled = true;
-let replyIndex = 0;
 let particles = [];
 let feedbackTimer;
+let lastCommand = "";
+let repeatCount = 0;
 
 function renderList(target, items, render) {
   target.replaceChildren(...items.map(render));
 }
 
 function renderMemory() {
-  renderList(memoryList, memories, (memory) => {
+  const visibleMemories = memories.length ? memories : ["No recent commands or messages."];
+  renderList(memoryList, visibleMemories, (memory) => {
     const item = document.createElement("li");
     item.textContent = memory;
     return item;
@@ -91,21 +129,23 @@ function pushEvent(text) {
   renderEvents();
 }
 
+function pulse(sourceElement) {
+  if (!sourceElement) return;
+  sourceElement.classList.add("was-clicked");
+  window.setTimeout(() => sourceElement.classList.remove("was-clicked"), 520);
+}
+
 function acknowledge(title, detail, sourceElement) {
   window.clearTimeout(feedbackTimer);
   actionFeedback.querySelector("strong").textContent = title;
   actionFeedback.querySelector("span:last-child").textContent = detail;
   actionFeedback.classList.add("is-live");
-  turnState.textContent = `Runtime state: ${title.toLowerCase()}`;
-
-  if (sourceElement) {
-    sourceElement.classList.add("was-clicked");
-    window.setTimeout(() => sourceElement.classList.remove("was-clicked"), 520);
-  }
+  turnState.textContent = `Runtime state: ${title.toLowerCase().replace(".", "")}.`;
+  pulse(sourceElement);
 
   feedbackTimer = window.setTimeout(() => {
     actionFeedback.classList.remove("is-live");
-  }, 1400);
+  }, 1500);
 }
 
 function randomBetween(min, max) {
@@ -118,43 +158,165 @@ function refreshMetrics() {
   metrics.tts.textContent = `${randomBetween(108, 176)} ms`;
 }
 
-function simulateTurn(source = "manual command", sourceElement) {
-  assistantLine.textContent = replies[replyIndex % replies.length];
-  replyIndex += 1;
+function updateSafetyPill() {
+  safetyPill.textContent = safetyEnabled ? "Safe" : "Review";
+  safetyPill.classList.toggle("is-safe", safetyEnabled);
+  safetyPill.classList.toggle("is-alert", !safetyEnabled);
+}
+
+function rememberCommand(command) {
+  if (command === lastCommand) {
+    repeatCount += 1;
+    memories[0] = `Repeated message (${repeatCount}x): ${command}`;
+  } else {
+    lastCommand = command;
+    repeatCount = 1;
+    memories.unshift(`Latest message: ${command}`);
+  }
+
+  memories = memories.slice(0, 5);
+  renderMemory();
+}
+
+function runDiagnostics(source = "manual check", sourceElement) {
   refreshMetrics();
   renderWaveform();
-  pushEvent(`Simulated ${source} processed through bounded router.`);
-  acknowledge("Turn processed.", `Simulated ${source}; metrics, waveform, and event log updated.`, sourceElement);
+  assistantLine.textContent =
+    "Diagnostics refreshed. Sensors are mocked as available, memory is local to this page, and no external system was contacted.";
+  toolSummary.textContent = "System check complete. Tool bus is idle.";
+  pushEvent(`Diagnostics refreshed from ${source}.`);
+  acknowledge("Diagnostics refreshed.", "Latency values, waveform, and safety log were updated.", sourceElement);
+}
+
+function simulateTurn(source = "manual check", sourceElement) {
+  runDiagnostics(source, sourceElement);
 }
 
 function handleTool(tool, sourceElement) {
-  const labels = {
-    home: "Home Assistant status queried through the mock service bus.",
-    printer: "Printer telemetry worker returned stable hotend and bed readings.",
-    exec: "OS task request blocked pending explicit allowlist match.",
-    memory: "Memory index recall completed with metadata filters.",
+  const result = toolResults[tool] || {
+    summary: "Unknown tool ignored.",
+    answer: "I ignored an unknown tool request.",
   };
-  const label = labels[tool] || "Unknown tool request ignored.";
-  pushEvent(label);
-  toolSummary.textContent = label;
-  simulateTurn(`${tool} tool`, sourceElement);
+
+  assistantLine.textContent = result.answer;
+  toolSummary.textContent = result.summary;
+  renderWaveform();
+  pushEvent(result.summary);
+  acknowledge("Tool reviewed.", result.summary, sourceElement);
 }
 
 function setMode(button) {
+  const nextMode = button.dataset.mode;
+  const mode = modes[nextMode] || modes.standby;
+  currentMode = nextMode;
+
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("is-active"));
   button.classList.add("is-active");
-  pushEvent(`Operating mode set to ${button.dataset.mode}.`);
-  acknowledge("Mode changed.", `Operating mode is now ${button.dataset.mode}.`, button);
+  modeTitle.textContent = mode.title;
+  modeDetail.textContent = mode.detail;
+  assistantLine.textContent = mode.answer;
+  turnState.textContent = `Runtime state: ${mode.state}.`;
+
+  if (nextMode === "analysis") {
+    runDiagnostics("Analyze mode", button);
+    return;
+  }
+
+  if (nextMode === "ops") {
+    safetyEnabled = false;
+    updateSafetyPill();
+    toolSummary.textContent = "Operate mode: tool requests are staged for review.";
+  } else {
+    toolSummary.textContent = "Tool status: idle. No devices have been changed.";
+  }
+
+  pushEvent(`Mode set to ${nextMode}.`);
+  acknowledge("Mode changed.", mode.detail, button);
 }
 
 function toggleSafety(sourceElement) {
   safetyEnabled = !safetyEnabled;
-  safetyPill.textContent = safetyEnabled ? "Safe" : "Review";
-  safetyPill.classList.toggle("is-safe", safetyEnabled);
-  safetyPill.classList.toggle("is-alert", !safetyEnabled);
-  const message = safetyEnabled ? "Safety gate restored to safe mode." : "Safety gate moved to review mode.";
+  updateSafetyPill();
+  const message = safetyEnabled
+    ? "Safety gate is safe. Mock tools can report status only."
+    : "Safety gate is review-only. Actions are staged and logged.";
+  assistantLine.textContent = message;
   pushEvent(message);
-  acknowledge("Safety state updated.", message, sourceElement);
+  acknowledge("Safety updated.", message, sourceElement);
+}
+
+function clearEventLog(sourceElement) {
+  events = [{ time: nowTime(), text: "Safety event log cleared." }];
+  renderEvents();
+  acknowledge("Log cleared.", "Only the clear event remains in the safety log.", sourceElement);
+}
+
+function clearSession(sourceElement) {
+  memories = [];
+  events = [{ time: nowTime(), text: "Browser session reset." }];
+  lastCommand = "";
+  repeatCount = 0;
+  currentMode = "standby";
+  safetyEnabled = true;
+  commandInput.value = "Run diagnostics on the system.";
+  updateSafetyPill();
+  renderMemory();
+  renderEvents();
+  renderWaveform();
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.classList.toggle("is-active", tab.dataset.mode === "standby");
+  });
+  modeTitle.textContent = modes.standby.title;
+  modeDetail.textContent = modes.standby.detail;
+  assistantLine.textContent = "Session cleared. I am back in standby and no tool is active.";
+  toolSummary.textContent = "Tool status: idle. No devices have been changed.";
+  turnState.textContent = "Runtime state: waiting.";
+  acknowledge("Session cleared.", "Memory, log, mode, and safety state were reset.", sourceElement);
+}
+
+function handleConversation(command, sourceElement) {
+  assistantLine.textContent =
+    `I treated "${command}" as conversation text, not a tool request. Nothing was executed or changed.`;
+  toolSummary.textContent = "Tool status: idle. No devices have been changed.";
+  renderWaveform();
+  pushEvent("Message answered without invoking a tool.");
+  acknowledge("Message handled.", "No tool matched the message, so no action was taken.", sourceElement);
+}
+
+function routeCommand(command, sourceElement) {
+  const text = command.toLowerCase();
+
+  if (text.includes("clear") || text.includes("reset")) {
+    clearSession(sourceElement);
+    return;
+  }
+
+  if (text.includes("printer") || text.includes("temperature") || text.includes("nozzle") || text.includes("bed")) {
+    handleTool("printer", sourceElement);
+    return;
+  }
+
+  if (text.includes("home") || text.includes("light") || text.includes("device") || text.includes("assistant")) {
+    handleTool("home", sourceElement);
+    return;
+  }
+
+  if (text.includes("script") || text.includes("execute") || text.includes("terminal") || text.includes("run command")) {
+    handleTool("exec", sourceElement);
+    return;
+  }
+
+  if (text.includes("memory") || text.includes("remember") || text.includes("recall")) {
+    handleTool("memory", sourceElement);
+    return;
+  }
+
+  if (text.includes("diagnostic") || text.includes("check") || text.includes("system") || text.includes("health")) {
+    runDiagnostics("typed command", sourceElement);
+    return;
+  }
+
+  handleConversation(command, sourceElement);
 }
 
 function sizeCanvas() {
@@ -199,28 +361,46 @@ document.querySelectorAll(".tool-card").forEach((button) => {
   button.addEventListener("click", () => handleTool(button.dataset.tool, button));
 });
 
-document.querySelector("[data-action='simulate']").addEventListener("click", (event) => {
-  simulateTurn("manual command", event.currentTarget);
+document.querySelectorAll(".quick-actions button").forEach((button) => {
+  button.addEventListener("click", () => {
+    commandInput.value = button.dataset.prompt;
+    rememberCommand(button.dataset.prompt);
+    routeCommand(button.dataset.prompt, button);
+  });
 });
+
+document.querySelector("[data-action='diagnostics']").addEventListener("click", (event) => {
+  simulateTurn("Run Check button", event.currentTarget);
+});
+
 document.querySelector("[data-action='toggle-safety']").addEventListener("click", (event) => {
   toggleSafety(event.currentTarget);
+});
+
+document.querySelector("[data-action='clear-session']").addEventListener("click", (event) => {
+  clearSession(event.currentTarget);
+});
+
+document.querySelector("[data-action='clear-log']").addEventListener("click", (event) => {
+  clearEventLog(event.currentTarget);
 });
 
 commandForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const command = commandInput.value.trim();
   if (!command) return;
+  rememberCommand(command);
   pushEvent(`Command received: ${command}`);
-  memories.unshift(`Latest command: ${command}`);
-  if (memories.length > 5) memories.pop();
-  renderMemory();
-  simulateTurn("typed command", commandForm.querySelector("button"));
+  routeCommand(command, commandForm.querySelector("button"));
 });
 
 window.addEventListener("resize", sizeCanvas);
 
+modeTitle.textContent = modes[currentMode].title;
+modeDetail.textContent = modes[currentMode].detail;
 renderMemory();
 renderEvents();
 renderWaveform();
+updateSafetyPill();
 sizeCanvas();
 drawStarfield();

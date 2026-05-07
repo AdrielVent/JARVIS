@@ -25,15 +25,17 @@
         </div>
         <nav class="mode-tabs" aria-label="Operating mode">
           <button class="tab is-active" type="button" data-mode="standby">Standby</button>
-          <button class="tab" type="button" data-mode="analysis">Analysis</button>
-          <button class="tab" type="button" data-mode="ops">Ops</button>
+          <button class="tab" type="button" data-mode="analysis">Analyze</button>
+          <button class="tab" type="button" data-mode="ops">Operate</button>
         </nav>
         <div class="top-actions" aria-label="Session controls">
-          <button class="icon-button" type="button" data-action="simulate" aria-label="Run simulated turn" title="Run simulated turn">
+          <button class="action-button" type="button" data-action="diagnostics">
             <span aria-hidden="true">▶</span>
+            <span>Run Check</span>
           </button>
-          <button class="icon-button" type="button" data-action="toggle-safety" aria-label="Toggle safety gate" title="Toggle safety gate">
+          <button class="action-button" type="button" data-action="toggle-safety">
             <span aria-hidden="true">⛨</span>
+            <span>Safety</span>
           </button>
         </div>
       </header>
@@ -41,9 +43,18 @@
       <section class="action-feedback" id="action-feedback" role="status" aria-live="polite">
         <span class="feedback-light" aria-hidden="true"></span>
         <div>
-          <strong>Ready for command.</strong>
-          <span>Click any control to see the runtime acknowledge it here and in the safety log.</span>
+          <strong>No task running.</strong>
+          <span>J.A.R.V.I.S. is listening locally. No tools or devices have been changed.</span>
         </div>
+      </section>
+
+      <section class="mode-summary" aria-labelledby="mode-title">
+        <div>
+          <p class="eyebrow">Current Mode</p>
+          <h2 id="mode-title">Standby - listening only</h2>
+          <p id="mode-detail">Messages are recorded and answered. Tool buttons stay idle unless you press one.</p>
+        </div>
+        <button class="clear-button" type="button" data-action="clear-session">Clear Session</button>
       </section>
 
       <main class="dashboard">
@@ -106,18 +117,23 @@
 
           <div class="dialogue">
             <p class="eyebrow">Conversational Runtime</p>
-            <h2 id="core-title">Good evening. Systems are within expected parameters.</h2>
-            <p class="turn-state" id="turn-state">Runtime state: idle and listening.</p>
+            <h2 id="core-title">Current Decision</h2>
+            <p class="turn-state" id="turn-state">Runtime state: waiting.</p>
             <p id="assistant-line">
-              I am maintaining a warm listening path, preserving safety gates, and holding noncritical work outside the audio-critical loop.
+              I am idle. Send a task, run a check, or press a tool card.
             </p>
             <form class="command-form" id="command-form">
-              <label for="command-input">Command</label>
+              <label for="command-input">Message or task</label>
               <div class="input-row">
-                <input id="command-input" name="command" type="text" autocomplete="off" value="Run diagnostics on the workshop systems.">
+                <input id="command-input" name="command" type="text" autocomplete="off" value="Run diagnostics on the system.">
                 <button type="submit">Transmit</button>
               </div>
             </form>
+            <div class="quick-actions" aria-label="Quick tasks">
+              <button type="button" data-prompt="Run diagnostics on the system.">Diagnostics</button>
+              <button type="button" data-prompt="Check the printer temperature.">Printer Temp</button>
+              <button type="button" data-prompt="Check Home Assistant status.">Home Status</button>
+            </div>
           </div>
         </section>
 
@@ -129,7 +145,7 @@
             </div>
             <span class="status-pill is-safe" id="safety-pill">Safe</span>
           </div>
-          <p class="tool-summary" id="tool-summary">No tool has been invoked in this browser session.</p>
+          <p class="tool-summary" id="tool-summary">Tool status: idle. No devices have been changed.</p>
 
           <div class="tool-grid">
             <button class="tool-card" type="button" data-tool="home">
@@ -157,7 +173,10 @@
           <div class="event-log">
             <div class="panel-head compact">
               <h3>Safety Event Log</h3>
-              <span id="event-count">04</span>
+              <button class="mini-button" type="button" data-action="clear-log">
+                <span id="event-count">04</span>
+                <span>Clear</span>
+              </button>
             </div>
             <ol id="event-log"></ol>
           </div>
