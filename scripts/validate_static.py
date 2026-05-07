@@ -11,6 +11,7 @@ REQUIRED_FILES = [
     ROOT / "index.html",
     ROOT / "src" / "styles.css",
     ROOT / "src" / "app.js",
+    ROOT / "bridge" / "jarvis_local_bridge.py",
     ROOT / "README.md",
     ROOT / "JARVIS_CANON_AND_DESIGN_BRIEF.md",
     ROOT / "JARVIS_PROJECT_VALIDATION.md",
@@ -85,6 +86,8 @@ def validate_css() -> None:
 def validate_js() -> None:
     js = (ROOT / "src" / "app.js").read_text(encoding="utf-8")
     required_tokens = [
+        "connectBridge",
+        "resolveBridgeApiBase",
         "simulateTurn",
         "toggleSafety",
         "renderWaveform",
@@ -96,8 +99,21 @@ def validate_js() -> None:
     require(not re.search(r"\beval\s*\(", js), "JavaScript must not use eval.")
 
 
+def validate_bridge() -> None:
+    bridge = (ROOT / "bridge" / "jarvis_local_bridge.py").read_text(encoding="utf-8")
+    required_tokens = [
+        "127.0.0.1",
+        "ThreadingHTTPServer",
+        "system_snapshot",
+        "execute_commands",
+        "False",
+    ]
+    for token in required_tokens:
+        require(token in bridge, f"Bridge missing required token: {token}")
+
+
 def main() -> int:
-    checks = [validate_files, validate_html, validate_css, validate_js]
+    checks = [validate_files, validate_html, validate_css, validate_js, validate_bridge]
     for check in checks:
         check()
     print("Static validation passed.")

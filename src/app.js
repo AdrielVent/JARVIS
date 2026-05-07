@@ -26,6 +26,10 @@ const modes = {
 };
 
 const toolResults = {
+  laptop: {
+    summary: "Laptop bridge check requested.",
+    answer: "I will look for the local bridge on this laptop. If it is running, I can read basic status only.",
+  },
   home: {
     summary: "Home Assistant mock check complete. No lights, locks, or devices were changed.",
     answer: "Home status is mocked as reachable. I did not send a real Home Assistant command.",
@@ -59,6 +63,14 @@ const metrics = {
 
 const modeTitle = document.querySelector("#mode-title");
 const modeDetail = document.querySelector("#mode-detail");
+const bridgeTitle = document.querySelector("#bridge-title");
+const bridgeDetail = document.querySelector("#bridge-detail");
+const bridgePill = document.querySelector("#bridge-pill");
+const bridgeEndpoint = document.querySelector("#bridge-endpoint");
+const bridgeDevice = document.querySelector("#bridge-device");
+const bridgeOs = document.querySelector("#bridge-os");
+const bridgeCpu = document.querySelector("#bridge-cpu");
+const bridgeDisk = document.querySelector("#bridge-disk");
 const memoryList = document.querySelector("#memory-list");
 const eventLog = document.querySelector("#event-log");
 const eventCount = document.querySelector("#event-count");
@@ -79,6 +91,15 @@ let particles = [];
 let feedbackTimer;
 let lastCommand = "";
 let repeatCount = 0;
+let bridgeApiBase = resolveBridgeApiBase();
+
+function resolveBridgeApiBase() {
+  const localHosts = new Set(["127.0.0.1", "localhost"]);
+  if (window.location.protocol.startsWith("http") && localHosts.has(window.location.hostname)) {
+    return `${window.location.origin}/api`;
+  }
+  return "http://127.0.0.1:8765/api";
+}
 
 function renderList(target, items, render) {
   target.replaceChildren(...items.map(render));
@@ -164,6 +185,83 @@ function updateSafetyPill() {
   safetyPill.classList.toggle("is-alert", !safetyEnabled);
 }
 
+function setBridgeConnected(snapshot) {
+  const osName = `${snapshot.device.os} ${snapshot.device.os_release}`;
+  bridgeTitle.textContent = "Connected to this laptop";
+  bridgeDetail.textContent =
+    "Read-only local bridge is online. J.A.R.V.I.S. can see basic system status, but cannot read files or run commands.";
+  bridgePill.textContent = "Connected";
+  bridgePill.classList.remove("is-alert");
+  bridgePill.classList.add("is-safe");
+  bridgeEndpoint.textContent = bridgeApiBase.replace("/api", "");
+  bridgeDevice.textContent = snapshot.device.hostname;
+  bridgeOs.textContent = osName;
+  bridgeCpu.textContent = `${snapshot.device.cpu_count} cores`;
+  bridgeDisk.textContent = `${snapshot.disk.free_gb} GB free`;
+}
+
+function setBridgeDisconnected() {
+  bridgeTitle.textContent = "Disconnected from this laptop";
+  bridgeDetail.textContent =
+    "Run python3 bridge/jarvis_local_bridge.py, then open http://127.0.0.1:8765 or press Connect Laptop here.";
+  bridgePill.textContent = "Offline";
+  bridgePill.classList.add("is-alert");
+  bridgePill.classList.remove("is-safe");
+  bridgeEndpoint.textContent = bridgeApiBase.replace("/api", "");
+  bridgeDevice.textContent = "Not connected";
+  bridgeOs.textContent = "Unknown";
+  bridgeCpu.textContent = "Unknown";
+  bridgeDisk.textContent = "Unknown";
+}
+
+async function fetchBridgeJson(path, timeoutMs = 1400) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${bridgeApiBase}${path}`, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Bridge returned ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function connectBridge(sourceElement, quiet = false) {
+  pulse(sourceElement);
+  if (!quiet) {
+    acknowledge("Bridge connecting.", "Checking 127.0.0.1 for the read-only local laptop bridge.", sourceElement);
+  }
+
+  try {
+    await fetchBridgeJson("/health");
+    const snapshot = await fetchBridgeJson("/system");
+    setBridgeConnected(snapshot);
+    assistantLine.textContent =
+      `Connected to ${snapshot.device.hostname}. I can read OS, CPU, and disk status only. File access and command execution are disabled.`;
+    toolSummary.textContent = "Laptop bridge: connected in read-only mode.";
+    pushEvent(`Laptop bridge connected to ${snapshot.device.hostname}.`);
+    if (!quiet) {
+      acknowledge("Laptop connected.", "Read-only system status is now visible in the bridge panel.", sourceElement);
+    }
+    return true;
+  } catch (error) {
+    setBridgeDisconnected();
+    if (!quiet) {
+      assistantLine.textContent =
+        "I could not reach the local laptop bridge. Start it with python3 bridge/jarvis_local_bridge.py.";
+      toolSummary.textContent = "Laptop bridge: offline.";
+      pushEvent("Laptop bridge connection failed.");
+      acknowledge("Bridge offline.", "Start the local bridge, then press Connect Laptop again.", sourceElement);
+    }
+    return false;
+  }
+}
+
 function rememberCommand(command) {
   if (command === lastCommand) {
     repeatCount += 1;
@@ -193,6 +291,11 @@ function simulateTurn(source = "manual check", sourceElement) {
 }
 
 function handleTool(tool, sourceElement) {
+  if (tool === "laptop") {
+    connectBridge(sourceElement);
+    return;
+  }
+
   const result = toolResults[tool] || {
     summary: "Unknown tool ignored.",
     answer: "I ignored an unknown tool request.",
@@ -296,6 +399,11 @@ function routeCommand(command, sourceElement) {
     return;
   }
 
+  if (text.includes("laptop") || text.includes("computer") || text.includes("mac") || text.includes("disk") || text.includes("cpu")) {
+    connectBridge(sourceElement);
+    return;
+  }
+
   if (text.includes("home") || text.includes("light") || text.includes("device") || text.includes("assistant")) {
     handleTool("home", sourceElement);
     return;
@@ -385,6 +493,10 @@ document.querySelector("[data-action='clear-log']").addEventListener("click", (e
   clearEventLog(event.currentTarget);
 });
 
+document.querySelector("[data-action='connect-bridge']").addEventListener("click", (event) => {
+  connectBridge(event.currentTarget);
+});
+
 commandForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const command = commandInput.value.trim();
@@ -402,5 +514,7 @@ renderMemory();
 renderEvents();
 renderWaveform();
 updateSafetyPill();
+setBridgeDisconnected();
+connectBridge(null, true);
 sizeCanvas();
 drawStarfield();

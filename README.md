@@ -24,6 +24,22 @@ Then open:
 http://localhost:4173
 ```
 
+## Connect To This Laptop
+
+Browsers cannot directly inspect or control a laptop for security reasons. To connect J.A.R.V.I.S. to the laptop it is running on, start the read-only local bridge:
+
+```bash
+python3 bridge/jarvis_local_bridge.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765
+```
+
+The bridge binds to localhost only and exposes basic read-only status: hostname, OS, CPU count, and disk space. It does not read files, write files, run shell commands, or scan the network.
+
 ## Validate
 
 ```bash

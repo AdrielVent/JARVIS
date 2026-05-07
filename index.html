@@ -57,6 +57,39 @@
         <button class="clear-button" type="button" data-action="clear-session">Clear Session</button>
       </section>
 
+      <section class="connection-panel" aria-labelledby="bridge-title">
+        <div class="bridge-copy">
+          <p class="eyebrow">Local Laptop Bridge</p>
+          <h2 id="bridge-title">Disconnected from this laptop</h2>
+          <p id="bridge-detail">
+            Run the local bridge on this machine, then connect. This browser can only see read-only system status.
+          </p>
+        </div>
+        <div class="bridge-actions">
+          <span class="status-pill is-alert" id="bridge-pill">Offline</span>
+          <code id="bridge-endpoint">127.0.0.1:8765</code>
+          <button class="clear-button" type="button" data-action="connect-bridge">Connect Laptop</button>
+        </div>
+        <div class="bridge-stats" id="bridge-stats">
+          <div>
+            <span>Device</span>
+            <strong id="bridge-device">Not connected</strong>
+          </div>
+          <div>
+            <span>OS</span>
+            <strong id="bridge-os">Unknown</strong>
+          </div>
+          <div>
+            <span>CPU</span>
+            <strong id="bridge-cpu">Unknown</strong>
+          </div>
+          <div>
+            <span>Disk Free</span>
+            <strong id="bridge-disk">Unknown</strong>
+          </div>
+        </div>
+      </section>
+
       <main class="dashboard">
         <section class="panel senses" aria-labelledby="senses-title">
           <div class="panel-head">
@@ -131,6 +164,7 @@
             </form>
             <div class="quick-actions" aria-label="Quick tasks">
               <button type="button" data-prompt="Run diagnostics on the system.">Diagnostics</button>
+              <button type="button" data-prompt="Connect to this laptop.">Laptop Status</button>
               <button type="button" data-prompt="Check the printer temperature.">Printer Temp</button>
               <button type="button" data-prompt="Check Home Assistant status.">Home Status</button>
             </div>
@@ -148,6 +182,11 @@
           <p class="tool-summary" id="tool-summary">Tool status: idle. No devices have been changed.</p>
 
           <div class="tool-grid">
+            <button class="tool-card" type="button" data-tool="laptop">
+              <span class="tool-glyph" aria-hidden="true">⌘</span>
+              <strong>This Laptop</strong>
+              <span>Local bridge</span>
+            </button>
             <button class="tool-card" type="button" data-tool="home">
               <span class="tool-glyph" aria-hidden="true">⌂</span>
               <strong>Home Assistant</strong>
