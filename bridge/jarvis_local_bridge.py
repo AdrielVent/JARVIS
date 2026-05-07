@@ -17,7 +17,18 @@ from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.1.0"
+VERSION = "0.2.0"
+ALLOWED_CORS_ORIGINS = {
+    "null",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:8787",
+    "http://127.0.0.1:8787",
+    "https://adrielvent.github.io",
+    "https://adrielvent.github.io/JARVIS/",
+}
 
 
 def _round_gb(value: int) -> float:
@@ -50,6 +61,77 @@ def _read_macos_battery() -> dict[str, Any] | None:
                 percent = None
             break
     return {"percent": percent, "raw": output[:240]}
+
+
+def _run_short_command(command: list[str], timeout: float = 1.2) -> str | None:
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=timeout,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    value = result.stdout.strip()
+    return value or None
+
+
+def _read_total_memory() -> str:
+    if platform.system() == "Darwin":
+        raw = _run_short_command(["sysctl", "-n", "hw.memsize"])
+        if raw and raw.isdigit():
+            return f"{round(int(raw) / (1024**3))} GB"
+
+    if hasattr(os, "sysconf"):
+        try:
+            pages = os.sysconf("SC_PHYS_PAGES")
+            page_size = os.sysconf("SC_PAGE_SIZE")
+            if isinstance(pages, int) and isinstance(page_size, int):
+                return f"{round((pages * page_size) / (1024**3))} GB"
+        except (OSError, ValueError):
+            pass
+
+    return "Unknown"
+
+
+def _cpu_label() -> str:
+    if platform.system() == "Darwin":
+        brand = _run_short_command(["sysctl", "-n", "machdep.cpu.brand_string"])
+        if brand:
+            return brand
+
+    architecture = platform.machine() or "CPU"
+    cpu_count = os.cpu_count() or 1
+    return f"{architecture} ({cpu_count} cores)"
+
+
+def _os_label() -> str:
+    system_name = platform.system()
+    if system_name == "Darwin":
+        version = platform.mac_ver()[0] or platform.release()
+        return f"macOS {version}"
+    if system_name == "Windows":
+        return f"Windows {platform.release()}"
+    return f"{system_name} {platform.release()}".strip()
+
+
+def jarvis_system_info() -> dict[str, str]:
+    battery = _read_macos_battery()
+    battery_text = "Unknown"
+    if isinstance(battery, dict) and battery.get("percent") is not None:
+        battery_text = f"{battery['percent']}%"
+
+    return {
+        "deviceName": socket.gethostname() or "Operator",
+        "os": _os_label(),
+        "cpu": _cpu_label(),
+        "memory": _read_total_memory(),
+        "battery": battery_text,
+        "localTime": time.strftime("%I:%M %p").lstrip("0"),
+        "status": "online",
+    }
 
 
 def system_snapshot() -> dict[str, Any]:
@@ -171,10 +253,16 @@ def safe_action(action: str) -> dict[str, Any]:
 
 
 class JarvisBridgeHandler(SimpleHTTPRequestHandler):
-    server_version = "JarvisLocalBridge/0.1"
+    server_version = "JarvisLocalBridge/0.2"
 
     def end_headers(self) -> None:
-        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        origin = self.headers.get("Origin")
+        if origin in ALLOWED_CORS_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Accept, Content-Type")
+        self.send_header("Cross-Origin-Resource-Policy", "cross-origin")
         super().end_headers()
 
     def do_OPTIONS(self) -> None:
@@ -183,6 +271,12 @@ class JarvisBridgeHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
+        if path == "/status":
+            self._write_json({"status": "online"})
+            return
+        if path == "/system-info":
+            self._write_json(jarvis_system_info())
+            return
         if path == "/api/health":
             self._write_json(
                 {
@@ -251,7 +345,7 @@ def build_server(host: str, port: int) -> ThreadingHTTPServer:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Project J.A.R.V.I.S. local laptop bridge.")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--self-test", action="store_true", help="Print a system snapshot and exit.")
     args = parser.parse_args()
 
@@ -265,7 +359,7 @@ def main() -> int:
 
     server = build_server(args.host, args.port)
     print(f"Project J.A.R.V.I.S. local bridge running at http://{args.host}:{args.port}")
-    print("Open that URL in this laptop's browser. Press Ctrl+C to stop.")
+    print("Use that Local Bridge URL in the J.A.R.V.I.S. web app. Press Ctrl+C to stop.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

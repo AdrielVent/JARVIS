@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_URL = "http://127.0.0.1:8765/"
+DEFAULT_URL = "http://127.0.0.1:8787/"
 OUT_DIR = ROOT / "assets"
 PNG_PATH = OUT_DIR / "jarvis-local-qr.png"
 SVG_PATH = OUT_DIR / "jarvis-local-qr.svg"
