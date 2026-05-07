@@ -34,11 +34,11 @@ jobs:
       - name: TypeScript check
         run: npm run typecheck
 
-      - name: Static validation
-        run: python3 scripts/validate_static.py
-
       - name: Build Vite app
         run: npm run build
+
+      - name: Static validation
+        run: python3 scripts/validate_static.py
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

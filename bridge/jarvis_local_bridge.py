@@ -16,7 +16,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 
-ROOT = Path(__file__).resolve().parents[1]
+BRIDGE_FILE = Path(__file__).resolve()
+ROOT = BRIDGE_FILE.parents[1] if BRIDGE_FILE.parent.name == "bridge" else BRIDGE_FILE.parent
 VERSION = "0.2.0"
 ALLOWED_CORS_ORIGINS = {
     "null",
@@ -305,7 +306,17 @@ class JarvisBridgeHandler(SimpleHTTPRequestHandler):
         if path.startswith("/api/"):
             self._write_json({"ok": False, "error": "unknown endpoint"}, HTTPStatus.NOT_FOUND)
             return
-        super().do_GET()
+        if path == "/":
+            self._write_json(
+                {
+                    "status": "online",
+                    "name": "Project J.A.R.V.I.S. Local Bridge",
+                    "bridgeUrl": "http://127.0.0.1:8787",
+                    "message": "Return to the J.A.R.V.I.S. website and connect to this local bridge.",
+                }
+            )
+            return
+        self._write_json({"ok": False, "error": "unknown endpoint"}, HTTPStatus.NOT_FOUND)
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path

@@ -22,20 +22,33 @@ Public GitHub Pages website
 
 The website alone cannot read someone's laptop. Browsers intentionally block direct access to computer names, files, hardware details, local IP addresses, and private system data. Each user must run the Local Bridge locally on their own laptop.
 
+Each user runs their own Local Bridge on their own computer. The public website does not connect to Adriel's laptop.
+
 Default Local Bridge URL:
 
 ```text
 http://127.0.0.1:8787
 ```
 
-## Public Usage
+## How Normal Users Connect
 
 1. Open `https://adrielvent.github.io/JARVIS/`.
-2. Run the Local Bridge on your own laptop.
-3. Enter `http://127.0.0.1:8787`.
-4. Click `Connect`, or click `Find My Bridge`.
+2. Download the Local Bridge for macOS or Windows.
+3. Unzip it.
+4. Run the start script.
+5. Keep the bridge window open.
+6. Return to the website.
+7. Click `Find My Bridge`, or enter `http://127.0.0.1:8787`.
+8. Connect.
 
 The Local Bridge Finder only checks approved localhost bridge URLs after the user clicks `Find My Bridge`.
+
+Download URLs:
+
+```text
+https://adrielvent.github.io/JARVIS/downloads/JARVIS-Local-Bridge-macOS.zip
+https://adrielvent.github.io/JARVIS/downloads/JARVIS-Local-Bridge-Windows.zip
+```
 
 ## Local Development
 
@@ -87,8 +100,8 @@ Deployment flow:
 1. Push to `main`.
 2. GitHub Actions installs dependencies.
 3. GitHub Actions runs TypeScript validation.
-4. GitHub Actions runs the local static validation script.
-5. GitHub Actions builds the Vite app.
+4. GitHub Actions generates Local Bridge download ZIPs and builds the Vite app.
+5. GitHub Actions runs the local static validation script.
 6. GitHub Pages deploys `./dist`.
 
 In GitHub repository settings, set Pages source to `GitHub Actions`.
@@ -173,6 +186,8 @@ npm run typecheck
 npm run build
 python3 scripts/validate_static.py
 ```
+
+`npm run build` runs `python3 scripts/build_bridge_downloads.py` before `vite build`, so the macOS and Windows Local Bridge ZIP files are copied into the Vite public assets.
 
 ## Troubleshooting
 

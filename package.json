@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:bridges": "python3 scripts/build_bridge_downloads.py",
+    "build": "npm run build:bridges && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "validate": "python3 scripts/validate_static.py"

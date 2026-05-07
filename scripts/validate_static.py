@@ -4,6 +4,7 @@ import ast
 import json
 import re
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -26,6 +27,9 @@ REQUIRED_FILES = [
     ROOT / "src" / "lib" / "bridgeClient.ts",
     ROOT / "src" / "types" / "systemInfo.ts",
     ROOT / "bridge" / "jarvis_local_bridge.py",
+    ROOT / "scripts" / "build_bridge_downloads.py",
+    ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-macOS.zip",
+    ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Windows.zip",
     ROOT / "README.md",
 ]
 
@@ -41,12 +45,12 @@ APP_STRINGS = [
     "Welcome to J.A.R.V.I.S",
     "Try Demo Mode",
     "How J.A.R.V.I.S connects",
-    "J.A.R.V.I.S runs in your browser. To show real laptop details, it connects to a small Local Bridge running on your own computer. Your data stays local and is not uploaded.",
-    "Start the Local Bridge",
-    "Enter or find the bridge URL",
-    "Connect to view your dashboard",
+    "J.A.R.V.I.S runs in your browser. To show real laptop details, it connects to a small Local Bridge that you run on your own computer. No one connects to Adriel's laptop. Your bridge runs locally on your device, and your data is not uploaded.",
+    "Download and start your Local Bridge",
+    "Find or enter your bridge URL",
+    "Connect to view your own dashboard",
     "Demo Mode works without the bridge.",
-    "Real device mode requires a Local Bridge URL",
+    "Real device mode requires your own Local Bridge running at http://127.0.0.1:8787.",
     "What works now",
     "Real device name",
     "Operating system",
@@ -57,8 +61,14 @@ APP_STRINGS = [
     "Does not scan your network",
     "Does not upload device data",
     "Does not control your laptop without explicit future bridge endpoints",
-    "Bridge downloads are coming soon.",
-    "Developer quick start",
+    "Download for macOS",
+    "Download for Windows",
+    "JARVIS-Local-Bridge-macOS.zip",
+    "JARVIS-Local-Bridge-Windows.zip",
+    "Don't have the Local Bridge yet?",
+    "Download it for your computer, run it locally, then come back here and connect. The bridge runs only on your own laptop.",
+    "your own Local Bridge",
+    "Advanced / Developer setup",
     "python3 bridge/jarvis_local_bridge.py",
     "python bridge/jarvis_local_bridge.py",
 ]
@@ -101,7 +111,14 @@ def validate_files() -> None:
 def validate_package() -> None:
     package = json.loads(read(ROOT / "package.json"))
     require(package["scripts"]["dev"] == "vite", "npm run dev must start Vite.")
-    require(package["scripts"]["build"] == "vite build", "npm run build must build the Vite app.")
+    require(
+        package["scripts"]["build:bridges"] == "python3 scripts/build_bridge_downloads.py",
+        "npm run build:bridges must generate bridge downloads.",
+    )
+    require(
+        package["scripts"]["build"] == "npm run build:bridges && vite build",
+        "npm run build must generate bridge downloads before building Vite.",
+    )
     require(package["scripts"]["typecheck"] == "tsc --noEmit", "npm run typecheck must run TypeScript.")
     dependencies = {**package.get("dependencies", {}), **package.get("devDependencies", {})}
     for dependency in ["react", "react-dom", "vite", "typescript", "tailwindcss", "framer-motion"]:
@@ -179,6 +196,29 @@ def validate_security_boundaries() -> None:
     require(not re.search(r"\beval\s*\(", bridge_client), "Bridge client must not use eval.")
 
 
+def validate_bridge_downloads() -> None:
+    expected = {
+        ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-macOS.zip": {
+            "jarvis_local_bridge.py",
+            "start-jarvis-bridge.command",
+            "README-macOS.txt",
+        },
+        ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Windows.zip": {
+            "jarvis_local_bridge.py",
+            "start-jarvis-bridge.bat",
+            "README-Windows.txt",
+        },
+    }
+    for path, expected_names in expected.items():
+        require(path.exists(), f"Missing bridge download: {path.relative_to(ROOT)}")
+        with zipfile.ZipFile(path) as archive:
+            names = set(archive.namelist())
+            require(names == expected_names, f"Unexpected ZIP contents for {path.name}: {sorted(names)}")
+            for name in expected_names:
+                content = archive.read(name).decode("utf-8")
+                require("http://127.0.0.1:8787" in content, f"{name} must mention the local bridge URL.")
+
+
 def validate_css() -> None:
     css = read(ROOT / "src" / "index.css")
     for token in ["prefers-reduced-motion", ".glass-panel", ".scan-button", ".found-bridge", ".intro-reactor"]:
@@ -204,6 +244,7 @@ def validate_python_bridge() -> None:
     ]:
         require(token in bridge, f"Bridge missing required token: {token}")
     require('"*"' not in bridge, "Bridge CORS must not use a wildcard origin.")
+    require("super().do_GET()" not in bridge, "Bridge must not serve arbitrary local files.")
     require("execute_commands" in bridge and "False" in bridge, "Bridge must keep command execution disabled.")
 
 
@@ -216,6 +257,7 @@ def main() -> int:
         validate_app_copy,
         validate_bridge_client,
         validate_security_boundaries,
+        validate_bridge_downloads,
         validate_css,
         validate_python_bridge,
     ]

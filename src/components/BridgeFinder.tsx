@@ -18,11 +18,13 @@ const setupCopy = {
   macos: {
     title: "MacBook / macOS Setup",
     steps: [
-      "Open the Local Bridge app on your Mac.",
-      "Make sure it says \"Bridge Online.\"",
-      "Look for a URL like: http://localhost:8787",
-      "Copy that URL into J.A.R.V.I.S.",
-      "Click Connect.",
+      "Download the Local Bridge for macOS.",
+      "Unzip it.",
+      "Double-click start-jarvis-bridge.command.",
+      "If macOS blocks it, right-click and choose Open.",
+      "Keep the Terminal window open.",
+      "Return to J.A.R.V.I.S and click Find My Bridge.",
+      "Connect to http://127.0.0.1:8787.",
     ],
     troubleshooting: [
       "If macOS asks for network permission, click Allow.",
@@ -34,11 +36,13 @@ const setupCopy = {
   windows: {
     title: "Windows Laptop Setup",
     steps: [
-      "Open the Local Bridge app on your Windows laptop.",
-      "Make sure it says \"Bridge Online.\"",
-      "Look for a URL like: http://localhost:8787",
-      "Copy that URL into J.A.R.V.I.S.",
-      "Click Connect.",
+      "Download the Local Bridge for Windows.",
+      "Unzip it.",
+      "Double-click start-jarvis-bridge.bat.",
+      "If Windows Firewall asks, click Allow Access.",
+      "Keep the Command Prompt window open.",
+      "Return to J.A.R.V.I.S and click Find My Bridge.",
+      "Connect to http://127.0.0.1:8787.",
     ],
     troubleshooting: [
       "If Windows Firewall asks for permission, click Allow Access.",
@@ -66,6 +70,10 @@ export default function BridgeFinder({
   onSelectSetupTab,
 }: BridgeFinderProps) {
   const selectedCopy = setupCopy[selectedSetupTab];
+  const baseUrl = import.meta.env.BASE_URL;
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const macDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-macOS.zip`;
+  const windowsDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-Windows.zip`;
 
   return (
     <div className="grid gap-5">
@@ -172,26 +180,24 @@ export default function BridgeFinder({
           </div>
 
           <div className="rounded-lg border border-cyan-300/20 bg-white/[0.03] p-4">
-            <h4 className="font-semibold text-slate-50">Don&apos;t have the Local Bridge yet?</h4>
+            <h4 className="font-semibold text-slate-50">Don't have the Local Bridge yet?</h4>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Bridge downloads are coming soon. Developers can run the bridge from the project
-              folder with <code>python3 bridge/jarvis_local_bridge.py</code>.
+              Download it for your computer, run it locally, then come back here and connect. The
+              bridge runs only on your own laptop.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button className="disabled-button" type="button" disabled>
+              <a className="primary-button text-center" href={macDownloadUrl} download>
                 Download for macOS
-                <span>Coming soon</span>
-              </button>
-              <button className="disabled-button" type="button" disabled>
+              </a>
+              <a className="secondary-button text-center" href={windowsDownloadUrl} download>
                 Download for Windows
-                <span>Coming soon</span>
-              </button>
+              </a>
             </div>
           </div>
 
           <details className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4 text-sm text-slate-300">
             <summary className="cursor-pointer font-semibold text-cyan-100">
-              Developer quick start
+              Advanced / Developer setup
             </summary>
             <div className="mt-4 grid gap-4">
               <div>

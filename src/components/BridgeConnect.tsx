@@ -37,9 +37,9 @@ export default function BridgeConnect({
 }: BridgeConnectProps) {
   const isConnecting = connectionStatus === "connecting";
   const connectionSteps = [
-    "Start the Local Bridge",
-    "Enter or find the bridge URL",
-    "Connect to view your dashboard",
+    "Download and start your Local Bridge",
+    "Find or enter your bridge URL",
+    "Connect to view your own dashboard",
   ];
   const worksNow = [
     "Real device name",
@@ -91,9 +91,9 @@ export default function BridgeConnect({
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr_0.9fr]">
             <div className="space-y-5">
               <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-                J.A.R.V.I.S runs in your browser. To show real laptop details, it connects to a
-                small Local Bridge running on your own computer. Your data stays local and is not
-                uploaded.
+                J.A.R.V.I.S runs in your browser. To show real laptop details, it connects to a small
+                Local Bridge that you run on your own computer. No one connects to Adriel's
+                laptop. Your bridge runs locally on your device, and your data is not uploaded.
               </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {connectionSteps.map((step, index) => (
@@ -107,8 +107,8 @@ export default function BridgeConnect({
                 ))}
               </div>
               <p className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-6 text-amber-50">
-                Demo Mode works without the bridge. Real device mode requires a Local Bridge URL,
-                usually <code>http://127.0.0.1:8787</code>.
+                Demo Mode works without the bridge. Real device mode requires your own Local Bridge
+                running at http://127.0.0.1:8787.
               </p>
             </div>
 
