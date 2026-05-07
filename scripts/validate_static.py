@@ -221,7 +221,22 @@ def validate_bridge_downloads() -> None:
 
 def validate_css() -> None:
     css = read(ROOT / "src" / "index.css")
-    for token in ["prefers-reduced-motion", ".glass-panel", ".scan-button", ".found-bridge", ".intro-reactor"]:
+    for token in [
+        "prefers-reduced-motion",
+        "--stark-cyan",
+        "--glass-fill",
+        ".glass-panel",
+        ".stark-hero",
+        ".stark-reactor",
+        ".scan-button",
+        ".found-bridge",
+        ".intro-reactor",
+        ".finder-radar",
+        ".download-tile",
+        ".dashboard-workspace",
+        ".system-core-module",
+        ".telemetry-module",
+    ]:
         require(token in css, f"CSS missing required token: {token}")
     require("letter-spacing: -" not in css, "Negative letter spacing is not allowed.")
 

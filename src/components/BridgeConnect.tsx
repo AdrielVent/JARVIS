@@ -37,9 +37,18 @@ export default function BridgeConnect({
 }: BridgeConnectProps) {
   const isConnecting = connectionStatus === "connecting";
   const connectionSteps = [
-    "Download and start your Local Bridge",
-    "Find or enter your bridge URL",
-    "Connect to view your own dashboard",
+    {
+      label: "Download and start your Local Bridge",
+      detail: "Run the small bridge app on the same laptop you want to visualize.",
+    },
+    {
+      label: "Find or enter your bridge URL",
+      detail: "Use the localhost finder or paste the bridge URL from the bridge window.",
+    },
+    {
+      label: "Connect to view your own dashboard",
+      detail: "J.A.R.V.I.S renders only the device details returned by your bridge.",
+    },
   ];
   const worksNow = [
     "Real device name",
@@ -57,79 +66,118 @@ export default function BridgeConnect({
     "Does not upload device data",
     "Does not control your laptop without explicit future bridge endpoints",
   ];
+  const heroCallouts = [
+    ["Protocol", "Localhost handshake only"],
+    ["Boundary", "No external upload"],
+    ["Finder", "Click-initiated scan"],
+  ];
 
   return (
     <main className="jarvis-screen min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="hud-grid absolute inset-0" aria-hidden="true" />
+      <div className="stark-noise absolute inset-0" aria-hidden="true" />
       <div className="cinematic-vignette" aria-hidden="true" />
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5 sm:gap-6">
         <motion.header
-          className="grid min-h-[32vh] place-items-center py-8 text-center sm:min-h-[38vh] sm:py-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.65, ease: "easeOut" }}
+          className="stark-hero"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.75, ease: "easeOut" }}
         >
-          <div className="max-w-4xl">
-            <div className="mx-auto mb-7 h-36 w-36 sm:h-44 sm:w-44" aria-hidden="true">
-              <div className="mini-reactor">
-                <span className="mini-ring mini-ring-a" />
-                <span className="mini-ring mini-ring-b" />
-                <span className="mini-core" />
-              </div>
-            </div>
-            <p className="hud-eyebrow justify-center">Project J.A.R.V.I.S.</p>
-            <h1 className="mt-5 text-balance text-4xl font-semibold leading-tight text-slate-50 sm:text-6xl">
-              Connect Your Local Bridge
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-balance text-base leading-7 text-slate-300 sm:text-lg">
+          <div className="hero-copy">
+            <p className="hud-eyebrow">Project J.A.R.V.I.S.</p>
+            <h1 className="stark-title">J.A.R.V.I.S</h1>
+            <p className="stark-subtitle">Local Systems Interface</p>
+            <div className="hero-divider" aria-hidden="true" />
+            <p className="hero-kicker">Connect Your Local Bridge</p>
+            <p className="mt-4 max-w-2xl text-balance text-base leading-7 text-slate-300 sm:text-lg">
               Enter your bridge URL manually or use the helper to find it on this device.
             </p>
+            <div className="hero-command-strip" aria-label="Local bridge security summary">
+              {heroCallouts.map(([label, value]) => (
+                <div key={label} className="command-readout">
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="reactor-stage" aria-hidden="true">
+            <div className="stark-reactor">
+              <span className="reactor-ring reactor-ring-a" />
+              <span className="reactor-ring reactor-ring-b" />
+              <span className="reactor-ring reactor-ring-c" />
+              <span className="reactor-ring reactor-ring-d" />
+              <span className="reactor-crosshair" />
+              <span className="reactor-core" />
+              <span className="reactor-scan" />
+            </div>
+            <div className="reactor-callout callout-a">
+              <span>LOCAL BRIDGE</span>
+              <strong>127.0.0.1:8787</strong>
+            </div>
+            <div className="reactor-callout callout-b">
+              <span>DATA PATH</span>
+              <strong>Browser to your laptop</strong>
+            </div>
+            <div className="reactor-callout callout-c">
+              <span>MODE</span>
+              <strong>{connectionStatus === "error" ? "Operator attention" : "Ready"}</strong>
+            </div>
           </div>
         </motion.header>
 
-        <HudPanel title="How J.A.R.V.I.S connects" eyebrow="First-Time Setup" delay={0.02}>
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr_0.9fr]">
-            <div className="space-y-5">
+        <HudPanel
+          title="How J.A.R.V.I.S connects"
+          eyebrow="First-Time Setup"
+          className="stark-briefing"
+          delay={0.02}
+        >
+          <div className="briefing-layout">
+            <div className="briefing-primary">
               <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
                 J.A.R.V.I.S runs in your browser. To show real laptop details, it connects to a small
                 Local Bridge that you run on your own computer. No one connects to Adriel's
                 laptop. Your bridge runs locally on your device, and your data is not uploaded.
               </p>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="briefing-steps">
                 {connectionSteps.map((step, index) => (
-                  <div
-                    key={step}
-                    className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4"
-                  >
+                  <div key={step.label} className="briefing-step">
                     <span className="step-number">{index + 1}</span>
-                    <p className="mt-3 text-sm font-semibold text-slate-100">{step}</p>
+                    <div>
+                      <p>{step.label}</p>
+                      <small>{step.detail}</small>
+                    </div>
                   </div>
                 ))}
               </div>
-              <p className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-6 text-amber-50">
+              <p className="amber-note">
                 Demo Mode works without the bridge. Real device mode requires your own Local Bridge
                 running at http://127.0.0.1:8787.
               </p>
             </div>
 
-            <div className="rounded-lg border border-emerald-300/20 bg-emerald-300/5 p-4">
-              <h3 className="font-semibold text-emerald-100">What works now</h3>
-              <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+            <div className="intel-panel intel-panel-green">
+              <span className="micro-label">Capability Set</span>
+              <h3>What works now</h3>
+              <ul>
                 {worksNow.map((item) => (
-                  <li key={item} className="flex gap-3">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-lg bg-emerald-300" />
+                  <li key={item}>
+                    <span aria-hidden="true" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="rounded-lg border border-rose-300/20 bg-rose-300/5 p-4">
-              <h3 className="font-semibold text-rose-100">What J.A.R.V.I.S does not do</h3>
-              <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-300">
+            <div className="intel-panel intel-panel-rose">
+              <span className="micro-label">Privacy Boundary</span>
+              <h3>What J.A.R.V.I.S does not do</h3>
+              <ul>
                 {doesNotDo.map((item) => (
-                  <li key={item} className="flex gap-3">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-lg bg-rose-200" />
+                  <li key={item}>
+                    <span aria-hidden="true" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -138,8 +186,8 @@ export default function BridgeConnect({
           </div>
         </HudPanel>
 
-        <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
-          <HudPanel title="Manual Connection" eyebrow="Section 1" delay={0.05}>
+        <div className="command-deck-grid">
+          <HudPanel title="Manual Connection" eyebrow="Section 1" delay={0.05} className="command-panel">
             <form
               className="space-y-5"
               onSubmit={(event) => {
@@ -153,23 +201,29 @@ export default function BridgeConnect({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.52, ease: "easeOut", delay: 0.12 }}
               >
-                <label className="block text-center text-sm font-medium text-cyan-100" htmlFor="bridge-url">
+                <label className="command-label" htmlFor="bridge-url">
                   Enter your Local Bridge URL
                 </label>
-                <input
-                  id="bridge-url"
-                  className="input-hud mt-3 w-full text-center"
-                  value={bridgeUrl}
-                  onChange={(event) => onBridgeUrlChange(event.target.value)}
-                  placeholder="http://localhost:8787"
-                  type="url"
-                  inputMode="url"
-                  autoComplete="url"
-                  disabled={isConnecting}
-                />
+                <div className="prompt-input-shell">
+                  <span className="prompt-prefix" aria-hidden="true">
+                    link://
+                  </span>
+                  <input
+                    id="bridge-url"
+                    className="input-hud"
+                    value={bridgeUrl}
+                    onChange={(event) => onBridgeUrlChange(event.target.value)}
+                    placeholder="http://localhost:8787"
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    disabled={isConnecting}
+                  />
+                  <span className="prompt-caret" aria-hidden="true" />
+                </div>
               </motion.div>
 
-              <p className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4 text-sm leading-6 text-slate-300">
+              <p className="privacy-note">
                 Your system details stay on your device. This website only reads data from the
                 Local Bridge URL you provide.
               </p>
@@ -186,7 +240,7 @@ export default function BridgeConnect({
               {isConnecting && <LoadingScanner label="Verifying bridge..." progress={72} compact />}
 
               {errorMessage && (
-                <p className="rounded-lg border border-rose-300/35 bg-rose-400/10 p-4 text-sm text-rose-100" role="alert">
+                <p className="error-note" role="alert">
                   {errorMessage}
                 </p>
               )}

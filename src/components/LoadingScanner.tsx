@@ -14,13 +14,15 @@ export default function LoadingScanner({
   const safeProgress = Math.max(0, Math.min(100, progress));
 
   return (
-    <div className={compact ? "space-y-2" : "space-y-4"}>
+    <div className={compact ? "scanner-module scanner-compact" : "scanner-module"}>
       <div className="scanner-core mx-auto" aria-hidden="true">
         <motion.span
           className="scanner-sweep"
           animate={{ rotate: 360 }}
           transition={{ duration: 1.6, ease: "linear", repeat: Infinity }}
         />
+        <span className="scanner-axis scanner-axis-x" />
+        <span className="scanner-axis scanner-axis-y" />
         <span className="scanner-dot" />
       </div>
       <div className="space-y-2">
@@ -28,9 +30,9 @@ export default function LoadingScanner({
           <span>{label}</span>
           <span>{Math.round(safeProgress)}%</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-lg border border-cyan-300/20 bg-cyan-950/40">
+        <div className="scanner-progress">
           <motion.div
-            className="h-full bg-gradient-to-r from-cyan-300 via-blue-400 to-emerald-300"
+            className="scanner-progress-fill"
             initial={{ width: 0 }}
             animate={{ width: `${safeProgress}%` }}
             transition={{ duration: 0.35, ease: "easeOut" }}

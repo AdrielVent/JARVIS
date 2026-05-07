@@ -76,69 +76,109 @@ export default function BridgeFinder({
   const windowsDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-Windows.zip`;
 
   return (
-    <div className="grid gap-5">
-      <HudPanel title="Find My Bridge" eyebrow="Section 2" delay={0.12}>
-        <div className="space-y-5">
-          <p className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4 text-sm leading-6 text-slate-300">
-            We will only check common localhost bridge addresses on your own device. We will not
-            scan your network or upload anything.
-          </p>
-
-          <button
-            className="scan-button w-full"
-            type="button"
-            onClick={onFind}
-            disabled={isFindingBridge}
-          >
-            <span aria-hidden="true" className="scan-button-light" />
-            {isFindingBridge ? "Scanning localhost..." : "Find My Bridge"}
-          </button>
-
-          <AnimatePresence mode="wait">
-            {isFindingBridge && (
-              <motion.div
-                key="scanner"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <LoadingScanner label="Scanning localhost..." progress={scanProgress} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="space-y-3" aria-live="polite">
-            {foundBridges.map((url) => (
-              <motion.div
-                key={url}
-                className="found-bridge flex flex-col gap-3 rounded-lg border border-emerald-300/40 bg-emerald-300/10 p-4 sm:flex-row sm:items-center sm:justify-between"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-              >
-                <span className="text-sm text-emerald-100">Bridge found at: {url}</span>
-                <button className="secondary-button" type="button" onClick={() => onConnect(url)}>
-                  Connect
-                </button>
-              </motion.div>
-            ))}
-            {finderMessage && !isFindingBridge && foundBridges.length === 0 && (
-              <p className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100">
-                {finderMessage}
-              </p>
-            )}
+    <div className="finder-stack">
+      <HudPanel title="Find My Bridge" eyebrow="Section 2" delay={0.12} className="finder-panel">
+        <div className="finder-layout">
+          <div className="finder-radar" aria-hidden="true">
+            <span className="radar-ring radar-ring-a" />
+            <span className="radar-ring radar-ring-b" />
+            <span className="radar-ring radar-ring-c" />
+            <span className="radar-beam" />
+            <span className="radar-center" />
+            <span className="radar-ping ping-a" />
+            <span className="radar-ping ping-b" />
           </div>
 
-          <div className="rounded-lg border border-slate-500/20 bg-white/[0.03] p-4 text-sm text-slate-300">
-            Manual entry fallback: if the helper does not find your bridge, copy its URL from the
-            Local Bridge app and enter it in Manual Connection.
+          <div className="space-y-5">
+            <p className="privacy-note">
+              We will only check common localhost bridge addresses on your own device. We will not
+              scan your network or upload anything.
+            </p>
+
+            <button
+              className="scan-button w-full"
+              type="button"
+              onClick={onFind}
+              disabled={isFindingBridge}
+            >
+              <span aria-hidden="true" className="scan-button-light" />
+              {isFindingBridge ? "Scanning localhost..." : "Find My Bridge"}
+            </button>
+
+            <AnimatePresence mode="wait">
+              {isFindingBridge && (
+                <motion.div
+                  key="scanner"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  <LoadingScanner label="Scanning localhost..." progress={scanProgress} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="space-y-3" aria-live="polite">
+              {foundBridges.map((url) => (
+                <motion.div
+                  key={url}
+                  className="found-bridge signal-lock-row"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                >
+                  <div>
+                    <span className="micro-label">Signal acquired</span>
+                    <p>Bridge found at: {url}</p>
+                  </div>
+                  <button className="secondary-button" type="button" onClick={() => onConnect(url)}>
+                    Connect
+                  </button>
+                </motion.div>
+              ))}
+              {finderMessage && !isFindingBridge && foundBridges.length === 0 && (
+                <p className="amber-note">{finderMessage}</p>
+              )}
+            </div>
+
+            <div className="fallback-note">
+              Manual entry fallback: if the helper does not find your bridge, copy its URL from the
+              Local Bridge app and enter it in Manual Connection.
+            </div>
           </div>
         </div>
       </HudPanel>
 
-      <HudPanel title="Setup Help" eyebrow="Section 3" delay={0.18}>
+      <HudPanel title="Setup Help" eyebrow="Section 3" delay={0.18} className="setup-panel">
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-2 rounded-lg border border-cyan-300/20 bg-cyan-950/30 p-1">
+          <div className="download-section">
+            <div>
+              <span className="micro-label">Local Bridge Package</span>
+              <h4>Don't have the Local Bridge yet?</h4>
+              <p>
+                Download it for your computer, run it locally, then come back here and connect. The
+                bridge runs only on your own laptop.
+              </p>
+            </div>
+            <div className="download-grid">
+              <a className="download-tile download-tile-mac" href={macDownloadUrl} download>
+                <span className="download-os">macOS</span>
+                <strong>Download for macOS</strong>
+                <small>Runs locally on your device</small>
+                <code>http://127.0.0.1:8787</code>
+                <em>Secure localhost bridge</em>
+              </a>
+              <a className="download-tile download-tile-windows" href={windowsDownloadUrl} download>
+                <span className="download-os">Windows</span>
+                <strong>Download for Windows</strong>
+                <small>Runs locally on your device</small>
+                <code>http://127.0.0.1:8787</code>
+                <em>Secure localhost bridge</em>
+              </a>
+            </div>
+          </div>
+
+          <div className="setup-tabs">
             <button
               className={`setup-tab ${selectedSetupTab === "macos" ? "is-active" : ""}`}
               type="button"
@@ -155,11 +195,11 @@ export default function BridgeFinder({
             </button>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-slate-50">{selectedCopy.title}</h3>
-            <ol className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+          <div className="setup-brief">
+            <h3>{selectedCopy.title}</h3>
+            <ol>
               {selectedCopy.steps.map((step, index) => (
-                <li key={step} className="flex gap-3">
+                <li key={step}>
                   <span className="step-number">{index + 1}</span>
                   <span>{step}</span>
                 </li>
@@ -167,54 +207,35 @@ export default function BridgeFinder({
             </ol>
           </div>
 
-          <div className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-4">
-            <h4 className="font-semibold text-amber-100">Troubleshooting</h4>
-            <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+          <div className="troubleshooting-panel">
+            <h4>Troubleshooting</h4>
+            <ul>
               {selectedCopy.troubleshooting.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-lg bg-amber-200" />
+                <li key={item}>
+                  <span aria-hidden="true" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="rounded-lg border border-cyan-300/20 bg-white/[0.03] p-4">
-            <h4 className="font-semibold text-slate-50">Don't have the Local Bridge yet?</h4>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              Download it for your computer, run it locally, then come back here and connect. The
-              bridge runs only on your own laptop.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <a className="primary-button text-center" href={macDownloadUrl} download>
-                Download for macOS
-              </a>
-              <a className="secondary-button text-center" href={windowsDownloadUrl} download>
-                Download for Windows
-              </a>
-            </div>
-          </div>
-
-          <details className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-4 text-sm text-slate-300">
-            <summary className="cursor-pointer font-semibold text-cyan-100">
-              Advanced / Developer setup
-            </summary>
+          <details className="developer-setup">
+            <summary>Advanced / Developer setup</summary>
             <div className="mt-4 grid gap-4">
               <div>
-                <h4 className="font-semibold text-slate-50">macOS/Linux</h4>
-                <pre className="mt-2 overflow-x-auto rounded-lg border border-cyan-300/20 bg-slate-950/70 p-3 text-xs leading-6 text-cyan-50">
+                <h4>macOS/Linux</h4>
+                <pre>
                   <code>{quickStartCommands.unix.join("\n")}</code>
                 </pre>
               </div>
               <div>
-                <h4 className="font-semibold text-slate-50">Windows</h4>
-                <pre className="mt-2 overflow-x-auto rounded-lg border border-cyan-300/20 bg-slate-950/70 p-3 text-xs leading-6 text-cyan-50">
+                <h4>Windows</h4>
+                <pre>
                   <code>{quickStartCommands.windows.join("\n")}</code>
                 </pre>
               </div>
-              <p className="leading-6">
-                Then open the website and connect with:{" "}
-                <code>http://127.0.0.1:8787</code>
+              <p>
+                Then open the website and connect with: <code>http://127.0.0.1:8787</code>
               </p>
             </div>
           </details>

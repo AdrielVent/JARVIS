@@ -14,10 +14,10 @@ export default function JarvisIntro({ systemInfo, demoMode, onComplete }: Jarvis
   const welcomeText = useMemo(() => `Welcome to J.A.R.V.I.S, ${deviceName}.`, [deviceName]);
   const [typedText, setTypedText] = useState("");
   const bootChecks = [
-    "Bridge signature verified",
-    "Local telemetry sealed",
-    "Operator profile mapped",
-    "HUD compositor online",
+    "Expo boot sequence aligned",
+    "Workshop telemetry sealed",
+    "Smart glass compositor online",
+    "Local bridge signature verified",
   ];
 
   useEffect(() => {
@@ -50,8 +50,9 @@ export default function JarvisIntro({ systemInfo, demoMode, onComplete }: Jarvis
       transition={{ duration: 0.6 }}
     >
       <div className="hud-grid absolute inset-0" aria-hidden="true" />
+      <div className="stark-noise absolute inset-0" aria-hidden="true" />
       <div className="cinematic-vignette" aria-hidden="true" />
-      <section className="relative z-10 grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
+      <section className="intro-stage relative z-10 grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
         <motion.div
           className="mx-auto h-72 w-72 max-w-[72vw] sm:h-80 sm:w-80"
           initial={{ scale: 0.86, opacity: 0 }}
@@ -68,7 +69,7 @@ export default function JarvisIntro({ systemInfo, demoMode, onComplete }: Jarvis
           </div>
         </motion.div>
 
-        <div className="text-center lg:text-left">
+        <div className="intro-copy text-center lg:text-left">
           <motion.p
             className="hud-eyebrow justify-center lg:justify-start"
             initial={{ y: 12, opacity: 0 }}
@@ -77,7 +78,7 @@ export default function JarvisIntro({ systemInfo, demoMode, onComplete }: Jarvis
           >
             {demoMode ? "Demo Runtime" : "Local Bridge Handshake"}
           </motion.p>
-          <h1 className="mt-5 min-h-32 text-balance text-4xl font-semibold leading-tight text-slate-50 sm:text-6xl">
+          <h1 className="intro-title mt-5 min-h-32 text-balance text-4xl font-semibold leading-tight text-slate-50 sm:text-6xl">
             {typedText}
             <span className="type-caret" aria-hidden="true" />
           </h1>
@@ -87,7 +88,7 @@ export default function JarvisIntro({ systemInfo, demoMode, onComplete }: Jarvis
           </p>
 
           <motion.div
-            className="mt-7 grid gap-3 sm:grid-cols-2"
+            className="startup-check-grid mt-7 grid gap-3 sm:grid-cols-2"
             initial="hidden"
             animate="visible"
             variants={{
@@ -111,7 +112,7 @@ export default function JarvisIntro({ systemInfo, demoMode, onComplete }: Jarvis
           </motion.div>
 
           <div className="mt-8 max-w-md">
-            <LoadingScanner label="Calibrating interface..." progress={88} compact />
+            <LoadingScanner label="Signal acquisition..." progress={88} compact />
           </div>
         </div>
       </section>

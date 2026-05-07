@@ -30,6 +30,16 @@ Default Local Bridge URL:
 http://127.0.0.1:8787
 ```
 
+## Visual Strategy
+
+The interface is designed as an original Stark OS-inspired operating surface:
+
+- `Stark Expo` energy for the cinematic J.A.R.V.I.S identity and initialization moment.
+- `Stark Workshop` density for live device telemetry, circular HUD geometry, and dashboard modules.
+- `Smart Glass` clarity for forms, setup help, bridge downloads, and privacy messaging.
+
+The redesign uses a dark graphite base, controlled cyan/ice-blue holographic light, small amber accents, layered glass panels, radial scan motion, and high-detail technical readouts. It remains a frontend-only visual system and does not change the Local Bridge security model.
+
 ## How Normal Users Connect
 
 1. Open `https://adrielvent.github.io/JARVIS/`.
