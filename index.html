@@ -38,6 +38,14 @@
         </div>
       </header>
 
+      <section class="action-feedback" id="action-feedback" role="status" aria-live="polite">
+        <span class="feedback-light" aria-hidden="true"></span>
+        <div>
+          <strong>Ready for command.</strong>
+          <span>Click any control to see the runtime acknowledge it here and in the safety log.</span>
+        </div>
+      </section>
+
       <main class="dashboard">
         <section class="panel senses" aria-labelledby="senses-title">
           <div class="panel-head">
@@ -99,6 +107,7 @@
           <div class="dialogue">
             <p class="eyebrow">Conversational Runtime</p>
             <h2 id="core-title">Good evening. Systems are within expected parameters.</h2>
+            <p class="turn-state" id="turn-state">Runtime state: idle and listening.</p>
             <p id="assistant-line">
               I am maintaining a warm listening path, preserving safety gates, and holding noncritical work outside the audio-critical loop.
             </p>
@@ -120,6 +129,7 @@
             </div>
             <span class="status-pill is-safe" id="safety-pill">Safe</span>
           </div>
+          <p class="tool-summary" id="tool-summary">No tool has been invoked in this browser session.</p>
 
           <div class="tool-grid">
             <button class="tool-card" type="button" data-tool="home">

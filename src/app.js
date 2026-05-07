@@ -28,6 +28,9 @@ const memoryList = document.querySelector("#memory-list");
 const eventLog = document.querySelector("#event-log");
 const eventCount = document.querySelector("#event-count");
 const assistantLine = document.querySelector("#assistant-line");
+const actionFeedback = document.querySelector("#action-feedback");
+const turnState = document.querySelector("#turn-state");
+const toolSummary = document.querySelector("#tool-summary");
 const commandForm = document.querySelector("#command-form");
 const commandInput = document.querySelector("#command-input");
 const waveform = document.querySelector("#waveform");
@@ -38,6 +41,7 @@ const ctx = starfield.getContext("2d");
 let safetyEnabled = true;
 let replyIndex = 0;
 let particles = [];
+let feedbackTimer;
 
 function renderList(target, items, render) {
   target.replaceChildren(...items.map(render));
@@ -87,6 +91,23 @@ function pushEvent(text) {
   renderEvents();
 }
 
+function acknowledge(title, detail, sourceElement) {
+  window.clearTimeout(feedbackTimer);
+  actionFeedback.querySelector("strong").textContent = title;
+  actionFeedback.querySelector("span:last-child").textContent = detail;
+  actionFeedback.classList.add("is-live");
+  turnState.textContent = `Runtime state: ${title.toLowerCase()}`;
+
+  if (sourceElement) {
+    sourceElement.classList.add("was-clicked");
+    window.setTimeout(() => sourceElement.classList.remove("was-clicked"), 520);
+  }
+
+  feedbackTimer = window.setTimeout(() => {
+    actionFeedback.classList.remove("is-live");
+  }, 1400);
+}
+
 function randomBetween(min, max) {
   return Math.round(min + Math.random() * (max - min));
 }
@@ -97,37 +118,43 @@ function refreshMetrics() {
   metrics.tts.textContent = `${randomBetween(108, 176)} ms`;
 }
 
-function simulateTurn(source = "manual command") {
+function simulateTurn(source = "manual command", sourceElement) {
   assistantLine.textContent = replies[replyIndex % replies.length];
   replyIndex += 1;
   refreshMetrics();
   renderWaveform();
   pushEvent(`Simulated ${source} processed through bounded router.`);
+  acknowledge("Turn processed.", `Simulated ${source}; metrics, waveform, and event log updated.`, sourceElement);
 }
 
-function handleTool(tool) {
+function handleTool(tool, sourceElement) {
   const labels = {
     home: "Home Assistant status queried through the mock service bus.",
     printer: "Printer telemetry worker returned stable hotend and bed readings.",
     exec: "OS task request blocked pending explicit allowlist match.",
     memory: "Memory index recall completed with metadata filters.",
   };
-  pushEvent(labels[tool] || "Unknown tool request ignored.");
-  simulateTurn(`${tool} tool`);
+  const label = labels[tool] || "Unknown tool request ignored.";
+  pushEvent(label);
+  toolSummary.textContent = label;
+  simulateTurn(`${tool} tool`, sourceElement);
 }
 
 function setMode(button) {
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("is-active"));
   button.classList.add("is-active");
   pushEvent(`Operating mode set to ${button.dataset.mode}.`);
+  acknowledge("Mode changed.", `Operating mode is now ${button.dataset.mode}.`, button);
 }
 
-function toggleSafety() {
+function toggleSafety(sourceElement) {
   safetyEnabled = !safetyEnabled;
   safetyPill.textContent = safetyEnabled ? "Safe" : "Review";
   safetyPill.classList.toggle("is-safe", safetyEnabled);
   safetyPill.classList.toggle("is-alert", !safetyEnabled);
-  pushEvent(safetyEnabled ? "Safety gate restored to safe mode." : "Safety gate moved to review mode.");
+  const message = safetyEnabled ? "Safety gate restored to safe mode." : "Safety gate moved to review mode.";
+  pushEvent(message);
+  acknowledge("Safety state updated.", message, sourceElement);
 }
 
 function sizeCanvas() {
@@ -169,11 +196,15 @@ document.querySelectorAll(".tab").forEach((button) => {
 });
 
 document.querySelectorAll(".tool-card").forEach((button) => {
-  button.addEventListener("click", () => handleTool(button.dataset.tool));
+  button.addEventListener("click", () => handleTool(button.dataset.tool, button));
 });
 
-document.querySelector("[data-action='simulate']").addEventListener("click", () => simulateTurn());
-document.querySelector("[data-action='toggle-safety']").addEventListener("click", toggleSafety);
+document.querySelector("[data-action='simulate']").addEventListener("click", (event) => {
+  simulateTurn("manual command", event.currentTarget);
+});
+document.querySelector("[data-action='toggle-safety']").addEventListener("click", (event) => {
+  toggleSafety(event.currentTarget);
+});
 
 commandForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -183,7 +214,7 @@ commandForm.addEventListener("submit", (event) => {
   memories.unshift(`Latest command: ${command}`);
   if (memories.length > 5) memories.pop();
   renderMemory();
-  simulateTurn("typed command");
+  simulateTurn("typed command", commandForm.querySelector("button"));
 });
 
 window.addEventListener("resize", sizeCanvas);
