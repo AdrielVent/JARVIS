@@ -38,7 +38,9 @@ Then open:
 http://127.0.0.1:8765
 ```
 
-The bridge binds to localhost only and exposes basic read-only status: hostname, OS, CPU count, and disk space. It does not read files, write files, run shell commands, or scan the network.
+The bridge binds to localhost only and exposes basic system status: hostname, OS, CPU count, disk space, battery, and simple health warnings. It also supports three allowlisted safe actions: refresh status, copy a status summary to the clipboard, and open the project folder.
+
+It does not read arbitrary files, write arbitrary files, run shell commands from the browser, or scan the network.
 
 ## Validate
 

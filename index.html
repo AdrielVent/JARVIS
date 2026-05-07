@@ -62,7 +62,7 @@
           <p class="eyebrow">Local Laptop Bridge</p>
           <h2 id="bridge-title">Disconnected from this laptop</h2>
           <p id="bridge-detail">
-            Run the local bridge on this machine, then connect. This browser can only see read-only system status.
+            Run the local bridge on this machine, then connect. Safe actions are allowlisted and local only.
           </p>
         </div>
         <div class="bridge-actions">
@@ -87,6 +87,19 @@
             <span>Disk Free</span>
             <strong id="bridge-disk">Unknown</strong>
           </div>
+          <div>
+            <span>Battery</span>
+            <strong id="bridge-battery">Unknown</strong>
+          </div>
+          <div>
+            <span>Health</span>
+            <strong id="bridge-health">Unknown</strong>
+          </div>
+        </div>
+        <div class="bridge-command-row" aria-label="Laptop bridge actions">
+          <button class="clear-button" type="button" data-bridge-action="refresh">Refresh Status</button>
+          <button class="clear-button" type="button" data-bridge-action="copy-summary">Copy Summary</button>
+          <button class="clear-button" type="button" data-bridge-action="open-project">Open Project Folder</button>
         </div>
       </section>
 

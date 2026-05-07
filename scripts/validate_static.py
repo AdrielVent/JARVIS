@@ -105,6 +105,8 @@ def validate_bridge() -> None:
         "127.0.0.1",
         "ThreadingHTTPServer",
         "system_snapshot",
+        "safe_action",
+        "open_project_folder",
         "execute_commands",
         "False",
     ]

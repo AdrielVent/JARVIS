@@ -28,7 +28,7 @@ const modes = {
 const toolResults = {
   laptop: {
     summary: "Laptop bridge check requested.",
-    answer: "I will look for the local bridge on this laptop. If it is running, I can read basic status only.",
+    answer: "I will look for the local bridge on this laptop. If it is running, I can read status and offer safe local actions.",
   },
   home: {
     summary: "Home Assistant mock check complete. No lights, locks, or devices were changed.",
@@ -71,6 +71,8 @@ const bridgeDevice = document.querySelector("#bridge-device");
 const bridgeOs = document.querySelector("#bridge-os");
 const bridgeCpu = document.querySelector("#bridge-cpu");
 const bridgeDisk = document.querySelector("#bridge-disk");
+const bridgeBattery = document.querySelector("#bridge-battery");
+const bridgeHealth = document.querySelector("#bridge-health");
 const memoryList = document.querySelector("#memory-list");
 const eventLog = document.querySelector("#event-log");
 const eventCount = document.querySelector("#event-count");
@@ -187,9 +189,13 @@ function updateSafetyPill() {
 
 function setBridgeConnected(snapshot) {
   const osName = `${snapshot.device.os} ${snapshot.device.os_release}`;
+  const warnings = snapshot.diagnostics?.warnings || [];
+  const batteryText = snapshot.battery?.percent === null || snapshot.battery?.percent === undefined
+    ? "Unknown"
+    : `${snapshot.battery.percent}%`;
   bridgeTitle.textContent = "Connected to this laptop";
   bridgeDetail.textContent =
-    "Read-only local bridge is online. J.A.R.V.I.S. can see basic system status, but cannot read files or run commands.";
+    "Local bridge is online. J.A.R.V.I.S. can read system status and run only allowlisted safe actions.";
   bridgePill.textContent = "Connected";
   bridgePill.classList.remove("is-alert");
   bridgePill.classList.add("is-safe");
@@ -198,6 +204,8 @@ function setBridgeConnected(snapshot) {
   bridgeOs.textContent = osName;
   bridgeCpu.textContent = `${snapshot.device.cpu_count} cores`;
   bridgeDisk.textContent = `${snapshot.disk.free_gb} GB free`;
+  bridgeBattery.textContent = batteryText;
+  bridgeHealth.textContent = warnings.length ? warnings[0] : "Nominal";
 }
 
 function setBridgeDisconnected() {
@@ -212,14 +220,17 @@ function setBridgeDisconnected() {
   bridgeOs.textContent = "Unknown";
   bridgeCpu.textContent = "Unknown";
   bridgeDisk.textContent = "Unknown";
+  bridgeBattery.textContent = "Unknown";
+  bridgeHealth.textContent = "Unknown";
 }
 
-async function fetchBridgeJson(path, timeoutMs = 1400) {
+async function fetchBridgeJson(path, timeoutMs = 1400, options = {}) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${bridgeApiBase}${path}`, {
-      headers: { Accept: "application/json" },
+      method: options.method || "GET",
+      headers: { Accept: "application/json", ...(options.headers || {}) },
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -242,8 +253,8 @@ async function connectBridge(sourceElement, quiet = false) {
     const snapshot = await fetchBridgeJson("/system");
     setBridgeConnected(snapshot);
     assistantLine.textContent =
-      `Connected to ${snapshot.device.hostname}. I can read OS, CPU, and disk status only. File access and command execution are disabled.`;
-    toolSummary.textContent = "Laptop bridge: connected in read-only mode.";
+      `Connected to ${snapshot.device.hostname}. I can check health, copy a status summary, and open this project folder. Arbitrary commands are disabled.`;
+    toolSummary.textContent = "Laptop bridge: connected with allowlisted safe actions.";
     pushEvent(`Laptop bridge connected to ${snapshot.device.hostname}.`);
     if (!quiet) {
       acknowledge("Laptop connected.", "Read-only system status is now visible in the bridge panel.", sourceElement);
@@ -259,6 +270,33 @@ async function connectBridge(sourceElement, quiet = false) {
       acknowledge("Bridge offline.", "Start the local bridge, then press Connect Laptop again.", sourceElement);
     }
     return false;
+  }
+}
+
+async function runBridgeAction(action, sourceElement) {
+  if (action === "refresh") {
+    await connectBridge(sourceElement);
+    return;
+  }
+
+  acknowledge("Laptop action requested.", `Requesting allowlisted action: ${action}.`, sourceElement);
+  try {
+    const result = await fetchBridgeJson(`/actions/${action}`, 2200, { method: "POST" });
+    if (!result.ok) {
+      throw new Error(result.error || "Action failed");
+    }
+    if (result.snapshot) {
+      setBridgeConnected(result.snapshot);
+    }
+    assistantLine.textContent = result.message;
+    toolSummary.textContent = `Laptop action complete: ${result.message}`;
+    pushEvent(`Laptop action completed: ${result.message}`);
+    acknowledge("Laptop action complete.", result.message, sourceElement);
+  } catch (error) {
+    assistantLine.textContent = `Laptop action failed: ${error.message}`;
+    toolSummary.textContent = "Laptop action failed. Check the bridge and try again.";
+    pushEvent(`Laptop action failed: ${action}.`);
+    acknowledge("Laptop action failed.", error.message, sourceElement);
   }
 }
 
@@ -495,6 +533,12 @@ document.querySelector("[data-action='clear-log']").addEventListener("click", (e
 
 document.querySelector("[data-action='connect-bridge']").addEventListener("click", (event) => {
   connectBridge(event.currentTarget);
+});
+
+document.querySelectorAll("[data-bridge-action]").forEach((button) => {
+  button.addEventListener("click", () => {
+    runBridgeAction(button.dataset.bridgeAction, button);
+  });
 });
 
 commandForm.addEventListener("submit", (event) => {

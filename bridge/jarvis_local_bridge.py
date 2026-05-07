@@ -41,7 +41,15 @@ def _read_macos_battery() -> dict[str, Any] | None:
     output = " ".join(result.stdout.split())
     if not output:
         return None
-    return {"raw": output[:240]}
+    percent = None
+    for part in output.split():
+        if part.endswith("%;"):
+            try:
+                percent = int(part.removesuffix("%;"))
+            except ValueError:
+                percent = None
+            break
+    return {"percent": percent, "raw": output[:240]}
 
 
 def system_snapshot() -> dict[str, Any]:
@@ -53,13 +61,14 @@ def system_snapshot() -> dict[str, Any]:
         except OSError:
             load_average = None
 
-    return {
+    snapshot = {
         "ok": True,
         "bridge": {
             "name": "Project J.A.R.V.I.S. Local Bridge",
             "version": VERSION,
             "bound_to": "127.0.0.1",
-            "read_only": True,
+            "read_only": False,
+            "action_policy": "allowlisted_safe_actions_only",
         },
         "device": {
             "hostname": socket.gethostname(),
@@ -78,6 +87,8 @@ def system_snapshot() -> dict[str, Any]:
         "battery": _read_macos_battery(),
         "capabilities": {
             "read_system_status": True,
+            "open_project_folder": True,
+            "copy_status_summary": True,
             "execute_commands": False,
             "read_files": False,
             "write_files": False,
@@ -85,16 +96,85 @@ def system_snapshot() -> dict[str, Any]:
         },
         "timestamp": time.time(),
     }
+    snapshot["diagnostics"] = diagnostics_for(snapshot)
+    return snapshot
+
+
+def diagnostics_for(snapshot: dict[str, Any]) -> dict[str, Any]:
+    warnings: list[str] = []
+    disk = snapshot["disk"]
+    device = snapshot["device"]
+    battery = snapshot.get("battery")
+
+    if disk["free_gb"] < 20:
+        warnings.append(f"Low disk headroom: {disk['free_gb']} GB free.")
+    elif disk["used_percent"] >= 90:
+        warnings.append(f"Disk is {disk['used_percent']}% full.")
+
+    load_average = device.get("load_average")
+    cpu_count = device.get("cpu_count") or 1
+    if load_average and load_average[0] > cpu_count * 1.25:
+        warnings.append(f"High short-term CPU load: {load_average[0]} across {cpu_count} cores.")
+
+    if isinstance(battery, dict) and battery.get("percent") is not None and battery["percent"] < 20:
+        warnings.append(f"Battery is low: {battery['percent']}%.")
+
+    return {
+        "status": "attention" if warnings else "nominal",
+        "warnings": warnings,
+        "summary": "Needs attention." if warnings else "Laptop looks nominal from read-only checks.",
+    }
+
+
+def status_summary(snapshot: dict[str, Any]) -> str:
+    device = snapshot["device"]
+    disk = snapshot["disk"]
+    diagnostics = snapshot["diagnostics"]
+    lines = [
+        "Project J.A.R.V.I.S. laptop summary",
+        f"Device: {device['hostname']}",
+        f"OS: {device['os']} {device['os_release']} ({device['architecture']})",
+        f"CPU: {device['cpu_count']} cores",
+        f"Disk: {disk['free_gb']} GB free of {disk['total_gb']} GB ({disk['used_percent']}% used)",
+        f"Health: {diagnostics['summary']}",
+    ]
+    if diagnostics["warnings"]:
+        lines.append("Warnings:")
+        lines.extend(f"- {warning}" for warning in diagnostics["warnings"])
+    return "\n".join(lines)
+
+
+def copy_to_clipboard(text: str) -> None:
+    if platform.system() != "Darwin":
+        raise RuntimeError("Clipboard action currently supports macOS only.")
+    subprocess.run(["pbcopy"], input=text, text=True, check=True, timeout=2)
+
+
+def open_project_folder() -> None:
+    if platform.system() != "Darwin":
+        raise RuntimeError("Open project folder action currently supports macOS only.")
+    subprocess.run(["open", str(ROOT)], check=True, timeout=2)
+
+
+def safe_action(action: str) -> dict[str, Any]:
+    snapshot = system_snapshot()
+    if action == "copy-summary":
+        summary = status_summary(snapshot)
+        copy_to_clipboard(summary)
+        return {"ok": True, "action": action, "message": "Copied laptop summary to clipboard.", "summary": summary}
+    if action == "open-project":
+        open_project_folder()
+        return {"ok": True, "action": action, "message": f"Opened project folder: {ROOT}"}
+    if action == "refresh":
+        return {"ok": True, "action": action, "message": "Refreshed laptop diagnostics.", "snapshot": snapshot}
+    return {"ok": False, "action": action, "error": "Action is not allowlisted."}
 
 
 class JarvisBridgeHandler(SimpleHTTPRequestHandler):
     server_version = "JarvisLocalBridge/0.1"
 
     def end_headers(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Cross-Origin-Resource-Policy", "cross-origin")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         super().end_headers()
 
     def do_OPTIONS(self) -> None:
@@ -109,17 +189,47 @@ class JarvisBridgeHandler(SimpleHTTPRequestHandler):
                     "ok": True,
                     "name": "Project J.A.R.V.I.S. Local Bridge",
                     "version": VERSION,
-                    "read_only": True,
+                    "read_only": False,
+                    "action_policy": "allowlisted_safe_actions_only",
                 }
             )
             return
         if path == "/api/system":
             self._write_json(system_snapshot())
             return
+        if path == "/api/diagnostics":
+            snapshot = system_snapshot()
+            self._write_json(
+                {
+                    "ok": True,
+                    "snapshot": snapshot,
+                    "diagnostics": snapshot["diagnostics"],
+                    "summary": status_summary(snapshot),
+                }
+            )
+            return
         if path.startswith("/api/"):
             self._write_json({"ok": False, "error": "unknown endpoint"}, HTTPStatus.NOT_FOUND)
             return
         super().do_GET()
+
+    def do_POST(self) -> None:
+        path = urlparse(self.path).path
+        if path.startswith("/api/actions/"):
+            action = path.rsplit("/", 1)[-1]
+            try:
+                result = safe_action(action)
+            except Exception as exc:
+                result = {
+                    "ok": False,
+                    "action": action,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                }
+            status = HTTPStatus.OK if result.get("ok") else HTTPStatus.BAD_REQUEST
+            self._write_json(result, status)
+            return
+        self._write_json({"ok": False, "error": "unknown endpoint"}, HTTPStatus.NOT_FOUND)
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[jarvis-bridge] {self.address_string()} - {format % args}")
@@ -146,7 +256,8 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.self_test:
-        print(json.dumps(system_snapshot(), indent=2))
+        snapshot = system_snapshot()
+        print(json.dumps({"snapshot": snapshot, "summary": status_summary(snapshot)}, indent=2))
         return 0
 
     if args.host not in {"127.0.0.1", "localhost"}:

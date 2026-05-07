@@ -162,7 +162,7 @@ button {
 .bridge-stats {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -187,6 +187,13 @@ button {
   color: var(--text);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.bridge-command-row {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: 8px;
 }
 
 .mode-summary {
