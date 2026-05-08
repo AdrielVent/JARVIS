@@ -21,6 +21,7 @@ const setupCopy = {
       "Download the Local Bridge for macOS.",
       "Unzip it.",
       "Double-click start-jarvis-bridge.command.",
+      "For the Java bridge, double-click start-jarvis-bridge-java.command instead.",
       "If macOS blocks it, right-click and choose Open.",
       "Keep the Terminal window open.",
       "Return to J.A.R.V.I.S and click Find My Bridge.",
@@ -38,7 +39,8 @@ const setupCopy = {
     steps: [
       "Download the Local Bridge for Windows.",
       "Unzip it.",
-      "Double-click start-jarvis-bridge.bat.",
+      "Double-click start-jarvis-bridge-powershell.bat for the native Windows PowerShell bridge.",
+      "Or double-click start-jarvis-bridge.bat for Python, or start-jarvis-bridge-java.bat for Java.",
       "If Windows Firewall asks, click Allow Access.",
       "Keep the Command Prompt window open.",
       "Return to J.A.R.V.I.S and click Find My Bridge.",
@@ -57,6 +59,8 @@ const setupCopy = {
 const quickStartCommands = {
   unix: ["cd project-folder", "python3 bridge/jarvis_local_bridge.py"],
   windows: ["cd project-folder", "python bridge/jarvis_local_bridge.py"],
+  powershell: ["cd project-folder", "powershell -NoProfile -File bridge/jarvis_local_bridge.ps1"],
+  java: ["cd project-folder", "java bridge/JarvisLocalBridge.java"],
 };
 
 export default function BridgeFinder({
@@ -74,6 +78,8 @@ export default function BridgeFinder({
   const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   const macDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-macOS.zip`;
   const windowsDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-Windows.zip`;
+  const powershellDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-Windows-PowerShell.zip`;
+  const javaDownloadUrl = `${normalizedBaseUrl}downloads/JARVIS-Local-Bridge-Java.zip`;
 
   return (
     <div className="finder-stack">
@@ -164,14 +170,28 @@ export default function BridgeFinder({
               <a className="download-tile download-tile-mac" href={macDownloadUrl} download>
                 <span className="download-os">macOS</span>
                 <strong>Download for macOS</strong>
-                <small>Runs locally on your device</small>
+                <small>Native .command launcher plus Python and Java bridge options</small>
                 <code>http://127.0.0.1:8787</code>
                 <em>Secure localhost bridge</em>
               </a>
               <a className="download-tile download-tile-windows" href={windowsDownloadUrl} download>
                 <span className="download-os">Windows</span>
                 <strong>Download for Windows</strong>
-                <small>Runs locally on your device</small>
+                <small>Includes native PowerShell, Python, and Java bridge launchers</small>
+                <code>http://127.0.0.1:8787</code>
+                <em>Secure localhost bridge</em>
+              </a>
+              <a className="download-tile download-tile-windows" href={powershellDownloadUrl} download>
+                <span className="download-os">PowerShell</span>
+                <strong>Download Windows PowerShell Bridge</strong>
+                <small>No Python required. Runs locally on your Windows laptop.</small>
+                <code>http://127.0.0.1:8787</code>
+                <em>Read-only localhost bridge</em>
+              </a>
+              <a className="download-tile download-tile-java" href={javaDownloadUrl} download>
+                <span className="download-os">Java</span>
+                <strong>Download Java Bridge</strong>
+                <small>Cross-platform option for macOS and Windows with Java 11+</small>
                 <code>http://127.0.0.1:8787</code>
                 <em>Secure localhost bridge</em>
               </a>
@@ -232,6 +252,18 @@ export default function BridgeFinder({
                 <h4>Windows</h4>
                 <pre>
                   <code>{quickStartCommands.windows.join("\n")}</code>
+                </pre>
+              </div>
+              <div>
+                <h4>Windows PowerShell</h4>
+                <pre>
+                  <code>{quickStartCommands.powershell.join("\n")}</code>
+                </pre>
+              </div>
+              <div>
+                <h4>Java</h4>
+                <pre>
+                  <code>{quickStartCommands.java.join("\n")}</code>
                 </pre>
               </div>
               <p>

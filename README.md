@@ -43,7 +43,7 @@ The redesign uses a dark graphite base, controlled cyan/ice-blue holographic lig
 ## How Normal Users Connect
 
 1. Open `https://adrielvent.github.io/JARVIS/`.
-2. Download the Local Bridge for macOS or Windows.
+2. Download the Local Bridge for macOS, Windows, Windows PowerShell, or Java.
 3. Unzip it.
 4. Run the start script.
 5. Keep the bridge window open.
@@ -58,7 +58,20 @@ Download URLs:
 ```text
 https://adrielvent.github.io/JARVIS/downloads/JARVIS-Local-Bridge-macOS.zip
 https://adrielvent.github.io/JARVIS/downloads/JARVIS-Local-Bridge-Windows.zip
+https://adrielvent.github.io/JARVIS/downloads/JARVIS-Local-Bridge-Windows-PowerShell.zip
+https://adrielvent.github.io/JARVIS/downloads/JARVIS-Local-Bridge-Java.zip
 ```
+
+## Local Bridge Runtime Options
+
+The public website still talks to the same local API no matter which bridge runtime the user chooses.
+
+- macOS package: includes the Python bridge, a macOS `.command` launcher, and a Java launcher.
+- Windows package: includes the Python bridge, a native Windows PowerShell bridge, and a Java launcher.
+- Windows PowerShell package: no Python required; runs the read-only bridge through Windows PowerShell.
+- Java package: cross-platform bridge option for macOS and Windows with Java 11 or newer.
+
+All bridge options bind to `127.0.0.1:8787`, expose `GET /status` and `GET /system-info`, and keep device data local.
 
 ## Local Development
 
@@ -90,6 +103,20 @@ http://127.0.0.1:5174/
 ```
 
 Use the printed Vite URL.
+
+Alternative bridge runtimes:
+
+Windows PowerShell:
+
+```powershell
+powershell -NoProfile -File bridge/jarvis_local_bridge.ps1
+```
+
+Java 11 or newer:
+
+```bash
+java bridge/JarvisLocalBridge.java
+```
 
 ## GitHub Pages Deployment
 
@@ -177,6 +204,7 @@ It does not scan LAN IPs, random ports, the internet, or the user's network.
 - No LAN scan.
 - No random port scan.
 - No hidden browser-side laptop inspection.
+- PowerShell and Java bridge options expose the same read-only localhost API as the Python bridge.
 - Browser data stays in React state for the current session.
 - Local Bridge Finder only checks approved localhost URLs after a user click.
 - The Local Bridge is localhost-only and refuses to bind outside `127.0.0.1` or `localhost`.

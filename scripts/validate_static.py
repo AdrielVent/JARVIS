@@ -27,9 +27,13 @@ REQUIRED_FILES = [
     ROOT / "src" / "lib" / "bridgeClient.ts",
     ROOT / "src" / "types" / "systemInfo.ts",
     ROOT / "bridge" / "jarvis_local_bridge.py",
+    ROOT / "bridge" / "jarvis_local_bridge.ps1",
+    ROOT / "bridge" / "JarvisLocalBridge.java",
     ROOT / "scripts" / "build_bridge_downloads.py",
     ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-macOS.zip",
     ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Windows.zip",
+    ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Windows-PowerShell.zip",
+    ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Java.zip",
     ROOT / "README.md",
 ]
 
@@ -65,12 +69,20 @@ APP_STRINGS = [
     "Download for Windows",
     "JARVIS-Local-Bridge-macOS.zip",
     "JARVIS-Local-Bridge-Windows.zip",
+    "JARVIS-Local-Bridge-Windows-PowerShell.zip",
+    "JARVIS-Local-Bridge-Java.zip",
     "Don't have the Local Bridge yet?",
     "Download it for your computer, run it locally, then come back here and connect. The bridge runs only on your own laptop.",
+    "Download Windows PowerShell Bridge",
+    "Download Java Bridge",
+    "native Windows PowerShell bridge",
+    "Java bridge",
     "your own Local Bridge",
     "Advanced / Developer setup",
     "python3 bridge/jarvis_local_bridge.py",
     "python bridge/jarvis_local_bridge.py",
+    "powershell -NoProfile -File bridge/jarvis_local_bridge.ps1",
+    "java bridge/JarvisLocalBridge.java",
 ]
 
 ERROR_STRINGS = [
@@ -200,13 +212,30 @@ def validate_bridge_downloads() -> None:
     expected = {
         ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-macOS.zip": {
             "jarvis_local_bridge.py",
+            "JarvisLocalBridge.java",
             "start-jarvis-bridge.command",
+            "start-jarvis-bridge-java.command",
             "README-macOS.txt",
         },
         ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Windows.zip": {
             "jarvis_local_bridge.py",
+            "jarvis_local_bridge.ps1",
+            "JarvisLocalBridge.java",
             "start-jarvis-bridge.bat",
+            "start-jarvis-bridge-powershell.bat",
+            "start-jarvis-bridge-java.bat",
             "README-Windows.txt",
+        },
+        ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Windows-PowerShell.zip": {
+            "jarvis_local_bridge.ps1",
+            "start-jarvis-bridge-powershell.bat",
+            "README-Windows-PowerShell.txt",
+        },
+        ROOT / "public" / "downloads" / "JARVIS-Local-Bridge-Java.zip": {
+            "JarvisLocalBridge.java",
+            "start-jarvis-bridge-java.command",
+            "start-jarvis-bridge-java.bat",
+            "README-Java.txt",
         },
     }
     for path, expected_names in expected.items():
@@ -263,6 +292,36 @@ def validate_python_bridge() -> None:
     require("execute_commands" in bridge and "False" in bridge, "Bridge must keep command execution disabled.")
 
 
+def validate_alternate_bridges() -> None:
+    powershell = read(ROOT / "bridge" / "jarvis_local_bridge.ps1")
+    for token in [
+        "$HostAddress = \"127.0.0.1\"",
+        "$Port = 8787",
+        "Get-JarvisSystemInfo",
+        "/status",
+        "/system-info",
+        "https://adrielvent.github.io",
+        "TcpListener",
+    ]:
+        require(token in powershell, f"PowerShell bridge missing required token: {token}")
+    require("192.168." not in powershell, "PowerShell bridge must not scan LAN IPs.")
+    require("Invoke-Expression" not in powershell, "PowerShell bridge must not evaluate arbitrary commands.")
+
+    java = read(ROOT / "bridge" / "JarvisLocalBridge.java")
+    for token in [
+        'private static final String HOST = "127.0.0.1"',
+        "private static final int PORT = 8787",
+        '"/status"',
+        '"/system-info"',
+        "systemInfo()",
+        "https://adrielvent.github.io",
+        "HttpServer.create",
+    ]:
+        require(token in java, f"Java bridge missing required token: {token}")
+    require("192.168." not in java, "Java bridge must not scan LAN IPs.")
+    require("Runtime.getRuntime().exec" not in java, "Java bridge must not execute shell commands.")
+
+
 def main() -> int:
     checks = [
         validate_files,
@@ -275,6 +334,7 @@ def main() -> int:
         validate_bridge_downloads,
         validate_css,
         validate_python_bridge,
+        validate_alternate_bridges,
     ]
     for check in checks:
         check()
